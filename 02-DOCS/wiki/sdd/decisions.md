@@ -1,0 +1,40 @@
+# SDD decisions
+
+## 2026-09-26 — spec paraguas `frontend-ecommerce-ia` (draft)
+
+- Alcance: una spec paraguas (no 6 specs separadas de entrada) porque los dominios comparten sesión, cesta y roles; la descomposición en sub-specs se deja a `plan`/`tasks` (autenticación·catálogo·cesta·pedidos·admin·shell-IA).
+- Frontera respondida: IA = solo reservada en v1 (la API no expone IA) · frontal único cliente+admin mínimo con guards · cesta invitada con fusión al login · flujo gated (parar por fase, sin autopilot).
+- Enfoques considerados: (A, recomendado) paraguas + sub-specs incrementales — más artefactos, riesgo bajo y verify por dominio; (B) monolito single-plan big-bang — más rápido en papel, plan inmenso y verify frágil; (C) solo storefront y admin diferido — recorta antes de tiempo y contradice la decisión explícita, descartado.
+- Riesgos registrados en la spec: sin `constitution.md` ni `config.yaml` — recomendar `constitution` + `sdd-init` antes de `plan`; pagos solo informativos; moneda/importes tal cual API;shell IA sin contrato real (área no formulable).
+- Skills: mapeo pedido por el usuario registrado solo en Anexo A informativo (no es contrato) para no contaminar el WHAT/WHY; el `plan` lo convertirá en estrategia.
+
+## 2026-09-26 — `clarify` de `frontend-ecommerce-ia` (→ clarified)
+
+- Spec aprobada por el usuario tras lectura; pasa a `clarify` en flujo gated.
+- Taxonomía recorrida (10 categorías): 4 preguntas abiertas preguntadas y resueltas — stock bajo solo admin · reorden diferido · validación de disponibilidad obligatoria y bloqueante · seguimiento privado dueño+admin; 1 área graduada de datos/estado — invitado que vuelve conserva cesta en el mismo navegador; 4 supuestos validados y mantenidos; 2 diferidas intactas (+reorden añadido); 2 no-formulables sin graduar (IA, SEO).
+- Por defecto propuesto sin pregunta: retirar con dependencias exige confirmación explícita (criterio añadido).
+- Re-read tras hornear: sin huecos nuevos. Recomendación previa a `plan`: `constitution` + `sdd-init` (siguen faltando).
+
+## 2026-09-26 — constitution v1.0.0 ratificada + plan `frontend-ecommerce-ia` (draft)
+
+- Constitution ratificada explícitamente por el usuario; entra en vigor (16 principios + DoD).
+- Decisiones de plan: SPA único con áreas por rol (spec lo fija; partirlo rompería fusión/sesión) · refresh de vuelo único en cliente (evita doble refresh en ráfagas 401) · totales/stock/estados autoritativos del servidor, cliente sin aritmética de importes · e2e contra stubs verificados por contract tests + snapshot openapi (determinista sin backend vivo) · secuencia en 9 pasos con fan-out #2&#3, #6&#7, #8 tras #1.
+- 7 riesgos rankeados con mitigación; abiertas: `VITE_API_URL` por entorno y stub-vs-live (recomendado stub).
+
+## 2026-09-26 — tasks `frontend-ecommerce-ia` (15 tareas) + rama `feat/frontend-ecommerce-ia`
+
+- Aislamiento elegido: rama `feat/<slug>` (solo, sin servidor vivo encima); base verificada contra `origin/main` (idéntica, sin fetch pendiente). Sin commits aún — solo creación de rama.
+- Despiece TDD en 15 tareas con done-checks ejecutables (`vitest run`, `playwright --project=chromium`, `type-check`, lint, build); `[P]` solo con ficheros disjuntos vía convención route-tables por dominio; fan-out real tras T002 (T003+T004) y tras T003+T004 (T005+T006+T007).
+- Stub-vs-live **cerrada**: stub verificado por contract tests; smoke live opcional, nunca puerta.
+- Forecast: ~4-6k líneas, 45-60 ficheros, riesgo medium-high → `ask-on-risk` con PRs por hito sobre la rama.
+
+## 2026-09-26 — retoques post-analyze (gate BLOCKED → re-chequeo)
+
+- F2 (plan): "crear directo" cortado del §2 — la spec nunca lo pide; si un día se quiere, entra vía clarify con acceptance propio. F8 (spec): header y suposición actualizados — constitución vigente + config calibrado, riesgo retirado.
+- F1/F3–F7/F9–F12 (tasks): T012 reclama usuarios + filtro; Interfaces en T005/T009/T010/T012/T013; anti-float anclado a T002; formularios + retry en T003; rollback + consistencia en T007; resume en T005; bordes en T006; ausencia de reorden en T010; matriz full en T015; axe nombrado en T014. IDs estables, sin renumerar.
+
+## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
+
+- Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
+- 16 principios en 8 secciones + DoD que `verify` ejecuta; presupuestos con número (JS inicial ≤ 250 KB gzip, LCP ≤ 2.5 s en preview) y pisos comprobables (tipos estrictos, cero warnings, sin secretos, `VITE_API_URL` por entorno).
+- `sdd-init`: stack detectado (vue 3.5, vite 8, ts estricto, pinia 4, router 5, pnpm; runners vitest+playwright → `strict_tdd: true`); `execution_mode: interactive` (flujo gated elegido); comandos verify no-mutantes + build; registry refrescado (`npx @ericrisco/rsc registry refresh` OK); skills de stack ya instaladas, nada que añadir; `models.enabled: false` intacto.
