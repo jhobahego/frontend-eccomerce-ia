@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
+# Local env files (never commit real backends/secrets — see .env.example)
+.env
+.env.*
 dist
 dist-ssr
 coverage
