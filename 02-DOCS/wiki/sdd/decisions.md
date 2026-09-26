@@ -33,6 +33,14 @@
 - F2 (plan): "crear directo" cortado del §2 — la spec nunca lo pide; si un día se quiere, entra vía clarify con acceptance propio. F8 (spec): header y suposición actualizados — constitución vigente + config calibrado, riesgo retirado.
 - F1/F3–F7/F9–F12 (tasks): T012 reclama usuarios + filtro; Interfaces en T005/T009/T010/T012/T013; anti-float anclado a T002; formularios + retry en T003; rollback + consistencia en T007; resume en T005; bordes en T006; ausencia de reorden en T010; matriz full en T015; axe nombrado en T014. IDs estables, sin renumerar.
 
+## 2026-09-26 — T005 guards por rol + rutas base (complete)
+
+- `decideAccess` puro en `src/router/guards.ts` (testeado sin router) + `installSessionGuards` fino (el wiring bajo test con memory router, no solo la función — misma lección de T004).
+- DenySilent indistinguible: el catch-all redirige a `/not-found` (igual que el guard ante no-admin); el copy de NotFoundView es idéntico en ambos casos. `returnTo` solo se fija hacia login (nunca hacia not-found) y solo nace de `to.fullPath` (sin open-redirect).
+- Boot race (cazado por e2e, unit en verde): `app.use(router)` dispara la navegación inicial, así que `restore()` se asienta ANTES de instalar el router en `main.ts`; sin token es inmediato, sin flash.
+- `/admin` es placeholder con guard (seam de T010/T012 para `routes/admin.ts`); `openapi.json` de raíz verificado equivalente al snapshot (difiere solo en formato); `e2e/vue.spec.ts` scaffold eliminado (rojo desde T003).
+- Expiración API-time en página montada: seam documentado para T009; T005 cubre navegación + boot con `auth:expired` y token caducado real.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
