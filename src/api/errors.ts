@@ -49,7 +49,7 @@ function isNetworkFailure(input: unknown): boolean {
   )
 }
 
-function codeFor(message: string): string {
+export function codeFor(message: string): string {
   if (
     /not authenticated|unauthorized|incorrect email or password|invalid credentials/i.test(message)
   ) {

@@ -34,3 +34,21 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - folded now: I-1 `.env` gitignored; I-2 ramas reales del backend (credentials/refresh/inactive→UNAUTHORIZED, privileges/not-authorized→FORBIDDEN) con tests; I-3 `NETWORK` no-técnico + convención de unwrap documentada (status-aware queda en T003); I-4 tipos alineados a snapshot (Order.items, OrderItem.total_price, ProductBase, campos computados, depth) + `CartSummary` conserva el nombre del plan con doc de desambiguación; I-5 required exactos + `api-shapes.spec.ts` (pins a compile-time); I-6 último segmento nombrado; I-7 `ApiHttpError extends Error` con `VALIDATION`; M-1 esquema http(s) exigido; M-5 `isAdmin` widened; M-8 tabla de vocabulario en `errors.ts`
 - deferred with owner: agregación multi-error → T009 (forms); coverage thresholds → T014; resto de minors → branch review
 - second review round skipped deliberately: delta is exactly the demanded folds, proven by 22/22 + type-check (recorded, not hidden)
+
+## T003 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 9 assertion reds (bearer, normalize, retry, single-flight, expired, login-form, register, restore, logout); e2e rojo (labels sin render: App.vue sin outlet)
+- green: 10 unit + 2 e2e (page.route stubs); `pnpm type-check` limpio; oxlint+eslint limpios
+- triangulation: N 401 paralelos → 1 refresh; retry una vez y NETWORK; refresh con fallo de red conserva sesión; App.spec reescrito al shell (rojo honesto al cambiar App.vue)
+- files: src/api/client.ts, src/stores/session.ts, src/views/LoginView.vue, src/views/RegisterView.vue, src/router/routes/auth.ts, src/router/index.ts, src/main.ts, src/App.vue, src/__tests__/client.spec.ts, src/__tests__/session.spec.ts, src/__tests__/App.spec.ts, e2e/auth.spec.ts (+ playwright.local.config.ts UNTRACKED, channel chrome del sistema; CI intacto)
+- decision: fetch nativo sin axios (cero deps); un solo reintento inmediato solo ante TypeError; vuelo único compartido cliente↔store vía runWithFreshToken; auto-login tras registro; label "Correo o usuario" envía campo username; restore() en boot; returnTo en store para T005; route-table auth owned by T003
+- blocker: none (bundled chromium no instala en esta distro; e2e local con system chrome vía config untracked)
+
+## T003-review — 2026-09-26
+- status: complete (folded)
+- reviewer: fresh-eyes subagent over a43b6aa → 1 Critical (C1), 7 Important, minors
+- C1 fixed by redesign (no patch): vuelo único con UN solo dueño (store, `Promise<Token>`); cliente ya no envuelve; `clear` atado en creación ⇒ `/me` 401 arranca refresh nuevo, imposible deadlock; `runWithFreshToken` huérfano eliminado (YAGNI); test de concurrencia reescrito al nivel real (1 POST) + test anti-loop
+- folded: I1 restore silencioso offline; I2 sin medias sesiones (loadUser limpia); I3 describedby condicional + inválidos en todos los campos; I6 mensaje de expiración; I4 stub verbatim del backend; M1 guard unificado; M-5 ya aplicado en T002
+- accepted with owner: I5 `/` muerta hasta T006 (home); I7 heurística CONFLICT→email (backend hoy solo duplica email); M2 nav incompleta hasta shell; M3 `npm run` preexistente → fix con T004
+- plan wording fix: done-check T003 decía `vitest run src/stores/session` (0 ficheros) → corregido a los spec reales (edición menor de redacción, sin cambio de alcance)
+- second review round skipped (same policy as T002): folds probados 36/32+2e2e + types; el deadlock se prueba por construcción (clear-before-continuation) + test de concurrencia

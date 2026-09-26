@@ -1,11 +1,15 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { RouterLink, RouterView } from 'vue-router'
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <div id="app-shell">
+    <header>
+      <nav aria-label="Principal">
+        <RouterLink to="/">Inicio</RouterLink>
+        <RouterLink to="/login">Entrar</RouterLink>
+      </nav>
+    </header>
+    <RouterView />
+  </div>
 </template>
-
-<style scoped></style>
