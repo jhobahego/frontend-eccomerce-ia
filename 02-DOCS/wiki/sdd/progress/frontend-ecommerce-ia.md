@@ -80,3 +80,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - decision: DenySilent indistinguible (catch-all redirige a /not-found, la misma URL del guard; sin 403); anónimo en protegida → login con returnTo (reanudable como admin); no-admin autenticado → not-found sin recordar; logout vuelve a `/` pública (nada protegido en pantalla); `openapi.json` real verificado byte-idéntico en contenido al snapshot (solo formato) — el stub sigue válido
 - deuda: e2e/vue.spec.ts (scaffold "You did it!", rojo desde T003) eliminado; expiración API-time (401 en página ya montada) queda como seam documentado para T009 (el guard cubre navegación + boot)
 - blocker: none (e2e local con system chrome vía config untracked; CI intacto)
+
+## T006 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 12 assertion reds (contratos de query + store)
+- green: 15 unit catalog + 5 e2e catalog; total `85 unit + 13 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: el e2e cazó duplicidad real de UI con la unit en verde (dos botones "Quitar filtros" en estado sin-resultados → violación strict-mode; fix: el vacío ofrece "Ver todo el catálogo" como CTA propia)
+- files: src/api/catalog.ts (filtros puros + 8 lecturas), src/stores/catalog.ts, src/router/routes/catalog.ts, src/router/index.ts, src/App.vue (link Catálogo), src/components/ProductCard.vue, src/views/HomeView.vue (portada: destacados + árbol), src/views/CatalogView.vue (filtros + orden + paginación + URL-sync), src/views/CategoryView.vue, src/views/ProductView.vue, src/__tests__/catalog.spec.ts, e2e/catalog.spec.ts
+- decision: importes tal cual API sin símbolo de moneda (spec clarified); precio-entrada normalizado a NN.NN en cliente (el stub lanza ante malformado); `sort:novelty` no envía sort (el snapshot no enumera valores); paginación por heurística página-llena (la API devuelve arrays sin total, `Page<T>` es envoltorio); filtros en URL para enlaces compartibles; sin imagen → marcador; cliente solo Disponible/No disponible (nada de stock bajo); rebajado condicional (sin fixture con sale en el stub)
+- blocker: none

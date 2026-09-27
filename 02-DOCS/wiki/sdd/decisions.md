@@ -41,6 +41,13 @@
 - `/admin` es placeholder con guard (seam de T010/T012 para `routes/admin.ts`); `openapi.json` de raíz verificado equivalente al snapshot (difiere solo en formato); `e2e/vue.spec.ts` scaffold eliminado (rojo desde T003).
 - Expiración API-time en página montada: seam documentado para T009; T005 cubre navegación + boot con `auth:expired` y token caducado real.
 
+## 2026-09-26 — T006 lectura de catálogo (complete)
+
+- Capa `src/api/catalog.ts`: constructores puros de query pineados (precios, flags solo-si-true, sort, skip/limit) + roundtrip URL; el store (`catalog`) solo orquesta lecturas en paralelo y normaliza errores a `{code,message}`.
+- Sin aritmética de importes en ningún punto (display-only hasta el template, sin símbolo de moneda por spec clarified); `normalizePriceInput` es codificación de entrada, no cálculo.
+- Paginación con heurística de página llena (arrays desnudos sin total); `turnPage` mueve la ventana `skip` sobre los últimos filtros.
+- Bordes: marcador sin imagen, vacíos orientadores, sin-resultados con CTA propia (duplicidad de botones cazada por strict-mode en e2e), categoría inválida guiada, reintentos con `role=alert`.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

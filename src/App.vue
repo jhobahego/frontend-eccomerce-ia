@@ -20,6 +20,7 @@ async function onLogout(): Promise<void> {
     <header>
       <nav aria-label="Principal">
         <RouterLink to="/">Inicio</RouterLink>
+        <RouterLink to="/catalogo">Catálogo</RouterLink>
         <RouterLink v-if="session.isAdmin" to="/admin">Administración</RouterLink>
         <RouterLink v-if="!session.isAuthenticated" to="/login">Entrar</RouterLink>
         <button v-else type="button" @click="onLogout()">Salir</button>
