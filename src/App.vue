@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 
+import AssistantPanel from './components/AssistantPanel.vue'
 import { useSessionStore } from './stores/session'
 
 const session = useSessionStore()
 const router = useRouter()
+const route = useRoute()
+
+const assistantOpen = ref(false)
+const launcher = ref<HTMLButtonElement | null>(null)
 
 async function onLogout(): Promise<void> {
   // Leave no protected content on screen: logout clears the session and the
@@ -13,6 +19,23 @@ async function onLogout(): Promise<void> {
   session.logout()
   await router.push('/')
 }
+
+function openAssistant(): void {
+  assistantOpen.value = true
+}
+
+function closeAssistant(): void {
+  assistantOpen.value = false
+  launcher.value?.focus()
+}
+
+// The shell never traps: navigating follows a manual path and dismisses.
+watch(
+  () => route.fullPath,
+  () => {
+    assistantOpen.value = false
+  },
+)
 </script>
 
 <template>
@@ -28,7 +51,11 @@ async function onLogout(): Promise<void> {
         <RouterLink v-if="!session.isAuthenticated" to="/login">Entrar</RouterLink>
         <button v-else type="button" @click="onLogout()">Salir</button>
       </nav>
+      <button ref="launcher" type="button" aria-haspopup="dialog" @click="openAssistant">
+        Asistente
+      </button>
     </header>
+    <AssistantPanel v-if="assistantOpen" @close="closeAssistant" />
     <RouterView />
   </div>
 </template>

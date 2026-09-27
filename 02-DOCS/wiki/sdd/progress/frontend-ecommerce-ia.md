@@ -125,3 +125,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/mocks/stubRoutes.ts + stubBackend.ts (7 writes + catálogo mutable por instancia), src/api/admin.ts, src/stores/admin.ts, src/router/routes/admin.ts, src/views/AdminView.vue (dashboard), src/views/AdminCategoriesView.vue, src/views/AdminProductsView.vue, src/__tests__/admin-catalog.spec.ts (+2 casos stub-contract), e2e/admin-catalog.spec.ts
 - decision: lecturas derivan de listas mutables (featured/low-stock/roots/subcategorías recalculados; hierarchy estática); derivados de producto (current/in-stock/low) recalculados tras cada escritura; stock solo `set` pineado (vocabulario sin tipo en snapshot); borrados directos (T013 añade confirmación); sin reorden en v1 con assert de ausencia
 - blocker: none
+
+## T011 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 4 assertion reds (copy honesto + launcher)
+- green: 4 unit assistant + 2 e2e assistant; total `127 unit + 27 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: e2e 2/2 a la primera (Escape + retorno de foco solo probables en navegador real)
+- files: src/components/AssistantPanel.vue, src/App.vue (launcher + cierre al navegar), src/__tests__/assistant.spec.ts, e2e/assistant.spec.ts
+- decision: diálogo overlay sin ruta (no interrumpe la compra); sin campo de texto a propósito (una caja de chat prometería respuestas); copy fijo pineado; navegar cierra el panel; foco al abrir y retorno al lanzador
+- blocker: none

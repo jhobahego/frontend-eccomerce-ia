@@ -72,6 +72,11 @@
 - Admin reusa lecturas públicas (misma verdad que el cliente) y refetchea tras escribir; aviso de stock bajo solo en zona admin (el cliente solo ve disponible).
 - `/admin` es dashboard; retiros directos hasta T013.
 
+## 2026-09-26 — T011 shell IA honesta (complete)
+
+- Sin backend ni stub: la API no expone IA, el hueco es puramente presentacional (launcher permanente + diálogo con copy fijo y caminos manuales a rutas reales).
+- Nada de input de chat, nada de respuestas generadas, nada que bloquee: el panel se cierra con Escape, con botón y al navegar.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
