@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { installSessionGuards } from './guards'
+import { accountRoutes } from './routes/account'
 import { authRoutes } from './routes/auth'
 import { baseRoutes } from './routes/base'
 import { cartRoutes } from './routes/cart'
@@ -12,7 +13,14 @@ const router = createRouter({
   // Domain route tables aggregate here; each task owns its own file and only
   // appends one line here. Matching is score-ranked, so the catch-all inside
   // baseRoutes never shadows the domain paths below.
-  routes: [...authRoutes, ...catalogRoutes, ...cartRoutes, ...orderRoutes, ...baseRoutes],
+  routes: [
+    ...authRoutes,
+    ...catalogRoutes,
+    ...cartRoutes,
+    ...orderRoutes,
+    ...accountRoutes,
+    ...baseRoutes,
+  ],
 })
 
 installSessionGuards(router)

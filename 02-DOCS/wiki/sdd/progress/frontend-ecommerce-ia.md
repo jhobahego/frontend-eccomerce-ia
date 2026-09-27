@@ -107,3 +107,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/orders.ts (OrderCreate + validación), src/stores/orders.ts (gates), src/router/routes/orders.ts (/checkout con requiresAuth), src/views/CheckoutView.vue, src/mocks/stubBackend.ts (consume), src/__tests__/orders.spec.ts (+1 caso en stub-contract), e2e/checkout.spec.ts
 - decision: solo create-from-cart (direct cortado, la spec no lo pide); checkout exige login (invitado va a login con returnTo y reanuda); cadena form→cesta→disponibilidad→POST (BLOCKED nunca postea; 409 → mensaje español sin filtrar); pago informativo por select; éxito muestra número + resetea cesta; billing/notas opcionales recortadas si vacías
 - blocker: none
+
+## T009 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 8 assertion reds (perfil + historial + cancel)
+- green: 8 unit account + 3 e2e account; total `111 unit + 21 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: e2e 3/3 a la primera (el stub persiste perfil por mutación en memoria; cancel adopta respuesta sin refetch ante stub sin estado)
+- files: src/api/users.ts (whitelist de perfil), src/api/orders.ts (labels + summaries + tracking + cancel), src/stores/orders.ts (history/detail/cancel), src/router/routes/account.ts (/cuenta), src/router/routes/orders.ts (/pedidos, /pedidos/:id), src/views/AccountView.vue, src/views/OrdersView.vue, src/views/OrderDetailView.vue, src/App.vue (Mi cuenta/Mis pedidos), src/__tests__/account.spec.ts, e2e/account.spec.ts
+- decision: PUT de perfil a nivel de tipo sin flags (C2 imposible por construcción); etiquetas de estado en español con fallback crudo; cancel-button solo en pending/confirmed (servidor autoritativo, 409/422 → guía); tracking sin ruta pública (privado por ausencia); éxito de checkout enlazará a historial en T009 — hecho vía nav Mis pedidos
+- blocker: none

@@ -1,5 +1,5 @@
 import { apiRequest } from './client'
-import type { Cart, Order } from './types'
+import type { Cart, Order, OrderStatus, PaymentStatus } from './types'
 
 /**
  * Order creation layer (T008). Only create-from-cart exists — direct orders
@@ -100,4 +100,83 @@ export function buildOrderCreate(cart: Cart, form: ShippingForm): OrderCreateBod
 
 export function createOrder(body: OrderCreateBody): Promise<Order> {
   return apiRequest<Order>('/api/v1/orders/', { method: 'POST', body })
+}
+
+/**
+ * Owned history + private tracking (T009). Summaries and timelines are
+ * stub-defined shapes (the snapshot leaves them untyped); they are pinned in
+ * the contract suite as decisions, like the rest of the stub vocabulary.
+ */
+export interface OrderSummary {
+  id: number
+  order_number: string
+  status: OrderStatus
+  payment_status: PaymentStatus
+  total_amount: string
+  total_items: number
+  created_at: string
+}
+
+export interface TrackingEntry {
+  status: string
+  at: string
+}
+
+export interface OrderTracking {
+  order_id: number
+  status: OrderStatus
+  timeline: TrackingEntry[]
+}
+
+const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  pending: 'Pendiente',
+  confirmed: 'Confirmado',
+  processing: 'En preparación',
+  shipped: 'Enviado',
+  delivered: 'Entregado',
+  cancelled: 'Cancelado',
+  refunded: 'Reembolsado',
+}
+
+const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: 'Pendiente',
+  paid: 'Pagado',
+  failed: 'Fallido',
+  refunded: 'Reembolsado',
+}
+
+/**
+ * Timeline entries are stub-defined loose strings, so labels accept any
+ * string and fall back to the raw value instead of throwing on unknowns.
+ */
+export function orderStatusLabel(status: string): string {
+  return (ORDER_STATUS_LABELS as Record<string, string>)[status] ?? status
+}
+
+export function paymentStatusLabel(status: string): string {
+  return (PAYMENT_STATUS_LABELS as Record<string, string>)[status] ?? status
+}
+
+/**
+ * Client hint for showing the cancel action. The server stays authoritative:
+ * a late cancel is rejected there and mapped to guidance, never assumed.
+ */
+export function isCancellableStatus(status: string): boolean {
+  return status === 'pending' || status === 'confirmed'
+}
+
+export function fetchOwnOrders(): Promise<OrderSummary[]> {
+  return apiRequest<OrderSummary[]>('/api/v1/orders/')
+}
+
+export function fetchOrder(id: number): Promise<Order> {
+  return apiRequest<Order>(`/api/v1/orders/${id}`)
+}
+
+export function fetchOrderTracking(id: number): Promise<OrderTracking> {
+  return apiRequest<OrderTracking>(`/api/v1/orders/${id}/track`)
+}
+
+export function cancelOwnOrder(id: number): Promise<Order> {
+  return apiRequest<Order>(`/api/v1/orders/${id}/cancel`, { method: 'POST' })
 }

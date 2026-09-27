@@ -60,6 +60,12 @@
 - El stub ganó estado mínimo (`orderPlaced`: pedir consume la cesta en lecturas/validate/summary), pineado en contract test; las instancias frescas por llamada dejan el resto de la suite intacta.
 - `/checkout` con `requiresAuth` (el invitado reanuda vía T005); éxito en-vista con número visible y cesta reseteada; el historial/seguimiento queda a T009.
 
+## 2026-09-26 — T009 cuenta e historial (complete)
+
+- Perfil: `ProfileUpdate` con 7 campos (email/username inmutables desde el frontal); tras PUT se refresca `session.user` para no partir la identidad.
+- Pedidos propios: historial + detalle con tracking en paralelo; cancel adopta la respuesta (sin refetch ante stub sin estado) y la propaga al historial; estados en español.
+- Sin seguimiento público: no existe ruta ni enlace fuera de la zona autenticada.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
