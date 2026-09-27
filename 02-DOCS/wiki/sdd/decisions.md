@@ -90,6 +90,13 @@
 - Gate puramente presentacional en las vistas: `countCategoryProducts` puro + `hasMovements` del store; sin dependencias el borrado sigue directo (T010 intacto, pineado por admin-catalog).
 - `alertdialog` inline con foco al abrir, Escape/cancelar aborta, confirmar retira y el foco retorna al disparador (misma clase de cuidado que el shell T011).
 
+## 2026-09-27 — T014 puertas AA + perf + cobertura (complete)
+
+- Axe en e2e con reglas completas incl. `color-contrast` (navegador real); el sample jsdom queda como control negativo rápido. Nodos `vue-devtools` excluidos por ser cromo del dev-server (ausentes en preview/prod); el spec audita tras la señal de h1 pintado, nunca el skeleton.
+- Cobertura: umbral `lines: 80` pineado en `vitest.config.ts`; las vistas quedan bajas por diseño (sus flujos los cubre e2e).
+- Perf medido, no pineado: JS inicial 53.65 KB gzip (chunk único, margen 5x); LCP 272–392 ms en preview (margen 6x). Se recomprueba antes de ship (§15).
+- Defectos reales cazados por axe: `heading-order` en ProductCard y `lang` vacío en index.html.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

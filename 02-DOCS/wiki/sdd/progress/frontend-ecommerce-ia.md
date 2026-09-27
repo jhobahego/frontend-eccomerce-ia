@@ -152,3 +152,13 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/stores/admin.ts (countCategoryProducts puro + orderProductIds/hasMovements/loadOrderMovements), src/views/AdminCategoriesView.vue + AdminProductsView.vue (alertdialog con foco/Escape/retorno), src/__tests__/admin-retire.spec.ts, e2e/admin-retire.spec.ts
 - decision: "producto con movimientos" = presente en líneas de pedido servidas (el snapshot no expone endpoint de movimientos; lectura, no negocio nuevo); gate solo presentacional en vistas; categoría cuenta productos cargados; alertdialog inline con foco, Escape y retorno al disparador
 - blocker: none
+
+## T014 — 2026-09-27
+- status: complete
+- red: sin auditoría axe en navegador + 3 rojos axe al estrenarla + cobertura 78.34% líneas (< 80)
+- green: 3 unit storefront-views + 3 e2e a11y; total `144 unit + 36 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde; gate de cobertura pineado (thresholds lines 80, medido 80.43%)
+- triangulation: axe cazó 2 defectos reales (orden de encabezados en ProductCard h3→h2; `lang=""` vacío → `es` + título en español); el resto era cromo del dev-server (nodos vue-devtools excluidos con justificación; skeleton auditado antes de pintar → señal de h1 pintado); regresión admin-catalog no re-ejecutada aquí (sin cambios en sus rutas; T013 la dejó 4/4)
+- perf: JS inicial 53.65 KB gzip por ruta (« 250 KB, chunk único); LCP en preview 272–392 ms en /, /catalogo, /producto/tetera (« 2.5 s, sonda temporal no commiteada)
+- files: e2e/a11y.spec.ts (axe full-rules en 14 rutas: storefront, auth/cuenta, admin), src/__tests__/storefront-views.spec.ts, vitest.config.ts (thresholds), index.html (lang/title), src/components/ProductCard.vue (h2)
+- decision: axe en e2e con todas las reglas incl. color-contrast (el sample jsdom queda como control negativo rápido); vistas al ~48% por diseño (sus flujos los pinea e2e, no unit); presupuestos medidos y registrados, no pineados en repo (se recomprueban antes de ship por constitución §15)
+- blocker: none (nota harness: el runner local a veces no sale tras el resumen con system chrome — los ✓ constan en log; no es código)

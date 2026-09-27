@@ -34,9 +34,11 @@ async function onAdd(): Promise<void> {
 
 <template>
   <article>
-    <h3 data-testid="product-name">
+    <!-- h2 (not h3): cards sit directly under each view's h1, and skipping a
+      level trips axe `heading-order` (T014). Sections keep their own h2. -->
+    <h2 data-testid="product-name">
       <RouterLink :to="`/producto/${props.product.slug}`">{{ props.product.name }}</RouterLink>
-    </h3>
+    </h2>
     <p>{{ formatAmount(props.product.current_price) }}</p>
     <p>{{ props.product.is_in_stock ? 'Disponible' : 'No disponible' }}</p>
     <img v-if="cover !== null" :src="cover" :alt="props.product.name" />
