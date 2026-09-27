@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import { formatAmount } from '../api/money'
+import { useCartStore } from '../stores/cart'
 import { useCatalogStore } from '../stores/catalog'
 
 const catalog = useCatalogStore()
+const cart = useCartStore()
 const route = useRoute()
+
+const quantity = ref(1)
+const adding = ref(false)
+const addFailed = ref(false)
 
 const cover = computed(() => {
   const images = catalog.product?.images
@@ -22,6 +28,19 @@ function load(): void {
     return
   }
   void catalog.loadProduct(slug)
+}
+
+async function onAdd(): Promise<void> {
+  if (adding.value || catalog.product === null) {
+    return
+  }
+  adding.value = true
+  addFailed.value = false
+  const wanted = Math.max(1, Math.floor(quantity.value))
+  quantity.value = wanted
+  await cart.addItem(catalog.product.id, wanted)
+  addFailed.value = cart.error !== null
+  adding.value = false
 }
 
 onMounted(load)
@@ -48,6 +67,12 @@ watch(
       </p>
       <p>{{ catalog.product.is_in_stock ? 'Disponible' : 'No disponible' }}</p>
       <p v-if="catalog.product.description !== null">{{ catalog.product.description }}</p>
+      <div>
+        <label for="product-quantity">Cantidad</label>
+        <input id="product-quantity" v-model.number="quantity" type="number" min="1" />
+        <button type="button" :disabled="adding" @click="onAdd">Añadir a la cesta</button>
+        <p v-if="addFailed" role="alert">No se pudo añadir. Reintenta.</p>
+      </div>
       <img v-if="cover !== null" :src="cover" :alt="catalog.product.name" />
       <p v-else>Sin imagen</p>
       <p v-if="catalog.product.category !== null">

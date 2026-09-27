@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 
 import { isApiError } from '../api/errors'
 import { SessionExpiredError } from '../api/client'
+import { useCartStore } from '../stores/cart'
 import { useSessionStore } from '../stores/session'
 
 const session = useSessionStore()
+const cart = useCartStore()
 const router = useRouter()
 
 const identifier = ref('')
@@ -22,6 +24,9 @@ async function onSubmit(): Promise<void> {
   errorMessage.value = null
   try {
     await session.login(identifier.value.trim(), password.value)
+    // Guest lines merge into the owned cart before resuming (T007). Merge
+    // failures surface on the cart page; they never block the login itself.
+    await cart.mergeOnLogin()
     const destination = session.returnTo ?? '/'
     session.setReturnTo(null)
     await router.push(destination)

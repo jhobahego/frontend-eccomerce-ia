@@ -89,3 +89,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/catalog.ts (filtros puros + 8 lecturas), src/stores/catalog.ts, src/router/routes/catalog.ts, src/router/index.ts, src/App.vue (link Catálogo), src/components/ProductCard.vue, src/views/HomeView.vue (portada: destacados + árbol), src/views/CatalogView.vue (filtros + orden + paginación + URL-sync), src/views/CategoryView.vue, src/views/ProductView.vue, src/__tests__/catalog.spec.ts, e2e/catalog.spec.ts
 - decision: importes tal cual API sin símbolo de moneda (spec clarified); precio-entrada normalizado a NN.NN en cliente (el stub lanza ante malformado); `sort:novelty` no envía sort (el snapshot no enumera valores); paginación por heurística página-llena (la API devuelve arrays sin total, `Page<T>` es envoltorio); filtros en URL para enlaces compartibles; sin imagen → marcador; cliente solo Disponible/No disponible (nada de stock bajo); rebajado condicional (sin fixture con sale en el stub)
 - blocker: none
+
+## T007 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 8 assertion reds (persistencia + mutaciones + fusión)
+- green: 10 unit cart + 3 e2e cart; total `95 unit + 16 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: e2e #15/#4 verdes a la primera (el diseño refetch-tras-mutación calza con el stub sin estado); el único rojo e2e fue regex propia que no casaba "está vacía" (test, no código)
+- files: src/api/cart.ts (endpoints + guest-id versionado), src/stores/cart.ts, src/router/routes/cart.ts, src/views/CartView.vue, src/components/ProductCard.vue (añadir), src/views/ProductView.vue (cantidad + añadir), src/views/LoginView.vue + RegisterView.vue (mergeOnLogin), src/App.vue (link Cesta), src/__tests__/cart.spec.ts, e2e/cart.spec.ts
+- decision: guest-id perezoso con clave versionada (valor corrupto se ignora); mutaciones refetchean totales servidos (cero aritmética local); cantidad optimista con rollback a snapshot; merge una sola vez tras login y suelta el guest-id (nunca bloquea la navegación); validateStock solo informa (T008 lo hace cumplir); ediciones persistentes quedan en unit (el stub sin estado no las retiene; quitar/vaciar sí son e2e-deterministas)
+- blocker: none

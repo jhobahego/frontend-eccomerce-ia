@@ -48,6 +48,12 @@
 - Paginación con heurística de página llena (arrays desnudos sin total); `turnPage` mueve la ventana `skip` sobre los últimos filtros.
 - Bordes: marcador sin imagen, vacíos orientadores, sin-resultados con CTA propia (duplicidad de botones cazada por strict-mode en e2e), categoría inválida guiada, reintentos con `role=alert`.
 
+## 2026-09-26 — T007 cesta invitada + fusión (complete)
+
+- Guest-id bajo `eia.guest_cart.v1` (JSON versionado, creado al primer add, jamás en boot); merge vía `POST /cart/merge/{id}` desde las vistas de auth (el store de sesión no conoce la cesta — acoplar en esa dirección rompería dominios).
+- Invariante anti-float en mutaciones: tras cada escritura se refetchea la cesta; los totales que pinta la vista son siempre los servidos. El rollback optimista revierte al snapshot ante cualquier fallo posterior.
+- Sin cambios al stub T004: el stub sin estado retiene añadir/fusionar/vaciar de forma determinista pero no ediciones; por eso el e2e cubre persistencia (#15), fusión (#4) y vaciado, y la edición con rollback queda en unit con transporte mockeado.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
