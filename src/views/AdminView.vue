@@ -8,8 +8,8 @@ import { RouterLink } from 'vue-router'
     <ul>
       <li><RouterLink to="/admin/categorias">Categorías</RouterLink></li>
       <li><RouterLink to="/admin/productos">Productos</RouterLink></li>
-      <li><span>Pedidos (próximamente)</span></li>
-      <li><span>Usuarios (próximamente)</span></li>
+      <li><RouterLink to="/admin/pedidos">Pedidos</RouterLink></li>
+      <li><RouterLink to="/admin/usuarios">Usuarios</RouterLink></li>
     </ul>
   </main>
 </template>

@@ -1,5 +1,6 @@
 import type {
   Category,
+  Order,
   OrderStatus,
   PaymentStatus,
   Product,
@@ -260,6 +261,23 @@ export function createStubBackend(options: StubBackendOptions = {}): {
   // every cart read serves empty — the real backend deactivates the cart the
   // same way, so refetch-after-order stays empty deterministically.
   let orderPlaced = false
+
+  // Mutable order (T012): status/payment transitions persist per instance so
+  // the admin→customer propagation is observable in later reads within one
+  // instance. Fresh instances start pending, keeping the contract suite green.
+  let currentOrder: Order = { ...stubOrder, items: [...stubOrder.items] }
+
+  function orderSummaryOf(order: Order): typeof stubOrderSummary {
+    return {
+      id: order.id,
+      order_number: order.order_number,
+      status: order.status,
+      payment_status: order.payment_status,
+      total_amount: order.total_amount,
+      total_items: order.total_items,
+      created_at: order.created_at,
+    }
+  }
 
   function bearerOf(headers: Record<string, string>): string | null {
     const header = headers['authorization'] ?? headers['Authorization'] ?? ''
@@ -818,16 +836,18 @@ export function createStubBackend(options: StubBackendOptions = {}): {
           return { status: 409, body: { detail: STUB_ERROR_DETAILS.insufficientStock } }
         }
         orderPlaced = true
-        return { status: 200, body: stubOrder }
+        currentOrder = { ...stubOrder, items: [...stubOrder.items] }
+        return { status: 200, body: { ...currentOrder } }
       }
 
       case 'GET /api/v1/orders/': {
         const wanted = url.searchParams.get('status')
-        const summaries =
-          wanted === null
-            ? [stubOrderSummary]
-            : [stubOrderSummary].filter((order) => order.status === wanted)
-        return { status: 200, body: summaries }
+        const summaries = [orderSummaryOf(currentOrder)]
+        return {
+          status: 200,
+          body:
+            wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
+        }
       }
 
       case 'GET /api/v1/orders/all': {
@@ -836,42 +856,44 @@ export function createStubBackend(options: StubBackendOptions = {}): {
           return adminOnly
         }
         const wanted = url.searchParams.get('status')
-        const summaries =
-          wanted === null
-            ? [stubOrderSummary]
-            : [stubOrderSummary].filter((order) => order.status === wanted)
-        return { status: 200, body: summaries }
+        const summaries = [orderSummaryOf(currentOrder)]
+        return {
+          status: 200,
+          body:
+            wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
+        }
       }
 
       case 'GET /api/v1/orders/{order_id}': {
         const wanted = Number(lastSegment(url.pathname))
-        if (wanted !== stubOrder.id) {
+        if (wanted !== currentOrder.id) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
-        return { status: 200, body: stubOrder }
+        return { status: 200, body: { ...currentOrder } }
       }
 
       case 'GET /api/v1/orders/{order_id}/track': {
         const wanted = idAfter(url.pathname, 'orders')
-        if (wanted !== stubOrder.id) {
+        if (wanted !== currentOrder.id) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
         return {
           status: 200,
           body: {
             order_id: wanted,
-            status: stubOrder.status,
-            timeline: [{ status: 'pending', at: stubOrder.created_at }],
+            status: currentOrder.status,
+            timeline: [{ status: currentOrder.status, at: currentOrder.created_at }],
           },
         }
       }
 
       case 'POST /api/v1/orders/{order_id}/cancel': {
         const wanted = idAfter(url.pathname, 'orders')
-        if (wanted !== stubOrder.id) {
+        if (wanted !== currentOrder.id) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
-        return { status: 200, body: { ...stubOrder, status: 'cancelled' as OrderStatus } }
+        currentOrder = { ...currentOrder, status: 'cancelled' as OrderStatus }
+        return { status: 200, body: { ...currentOrder } }
       }
 
       case 'PUT /api/v1/orders/{order_id}/status':
@@ -880,7 +902,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         // with no request body (review C1) — a spec-correct client sends
         // `?new_status=shipped`, never JSON.
         const wanted = idAfter(url.pathname, 'orders')
-        if (wanted !== stubOrder.id) {
+        if (wanted !== currentOrder.id) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
         if (key === 'PUT /api/v1/orders/{order_id}/status') {
@@ -902,7 +924,8 @@ export function createStubBackend(options: StubBackendOptions = {}): {
               },
             }
           }
-          return { status: 200, body: { ...stubOrder, status: next as OrderStatus } }
+          currentOrder = { ...currentOrder, status: next as OrderStatus }
+          return { status: 200, body: { ...currentOrder } }
         }
         const nextPayment = url.searchParams.get('payment_status')
         if (
@@ -922,10 +945,8 @@ export function createStubBackend(options: StubBackendOptions = {}): {
             },
           }
         }
-        return {
-          status: 200,
-          body: { ...stubOrder, payment_status: nextPayment as PaymentStatus },
-        }
+        currentOrder = { ...currentOrder, payment_status: nextPayment as PaymentStatus }
+        return { status: 200, body: { ...currentOrder } }
       }
 
       case 'GET /api/v1/health/':

@@ -6,10 +6,15 @@ import {
   createProduct as apiCreateProduct,
   deleteCategory as apiDeleteCategory,
   deleteProduct as apiDeleteProduct,
+  fetchAllOrders,
   fetchLowStock,
+  fetchUserDetail,
+  fetchUsers,
   setProductStock,
   toggleProductFeatured,
   updateCategory as apiUpdateCategory,
+  updateOrderPayment,
+  updateOrderStatus,
   updateProduct as apiUpdateProduct,
   type CategoryCreateInput,
   type CategoryUpdateInput,
@@ -18,7 +23,8 @@ import {
 } from '../api/admin'
 import { fetchCategories, searchProducts } from '../api/catalog'
 import { normalizeError } from '../api/errors'
-import type { ApiError, Category, Product } from '../api/types'
+import type { OrderSummary } from '../api/orders'
+import type { ApiError, Category, OrderStatus, PaymentStatus, Product, User } from '../api/types'
 
 /**
  * Admin catalog store (T010). Reads come from the public catalog layer (same
@@ -32,6 +38,12 @@ export const useAdminStore = defineStore('admin', () => {
   const lowStock = ref<Product[]>([])
   const loading = ref(false)
   const error = ref<ApiError | null>(null)
+  const orders = ref<OrderSummary[]>([])
+  const orderFilter = ref('')
+  const ordersLoading = ref(false)
+  const users = ref<User[]>([])
+  const selectedUser = ref<User | null>(null)
+  const usersLoading = ref(false)
 
   function fail(unknown: unknown): void {
     error.value = normalizeError(unknown)
@@ -105,6 +117,77 @@ export const useAdminStore = defineStore('admin', () => {
     await runWrite(() => toggleProductFeatured(id, featured))
   }
 
+  /**
+   * Admin orders/users (T012). Transitions adopt the served `Order` into the
+   * list entry (same class as T009 cancel): the response is authoritative,
+   * no refetch needed. The filter stays as the user set it.
+   */
+  async function loadOrders(status?: string): Promise<void> {
+    ordersLoading.value = true
+    error.value = null
+    try {
+      orders.value = await fetchAllOrders(status ? { status } : undefined)
+      orderFilter.value = status ?? ''
+    } catch (unknown) {
+      fail(unknown)
+    } finally {
+      ordersLoading.value = false
+    }
+  }
+
+  async function setOrderStatus(id: number, status: OrderStatus): Promise<void> {
+    error.value = null
+    try {
+      const updated = await updateOrderStatus(id, status)
+      orders.value = orders.value.map((entry) =>
+        entry.id === updated.id
+          ? { ...entry, status: updated.status, payment_status: updated.payment_status }
+          : entry,
+      )
+    } catch (unknown) {
+      fail(unknown)
+    }
+  }
+
+  async function setOrderPayment(id: number, payment: PaymentStatus): Promise<void> {
+    error.value = null
+    try {
+      const updated = await updateOrderPayment(id, payment)
+      orders.value = orders.value.map((entry) =>
+        entry.id === updated.id
+          ? { ...entry, status: updated.status, payment_status: updated.payment_status }
+          : entry,
+      )
+    } catch (unknown) {
+      fail(unknown)
+    }
+  }
+
+  async function loadUsers(): Promise<void> {
+    usersLoading.value = true
+    error.value = null
+    selectedUser.value = null
+    try {
+      users.value = await fetchUsers()
+    } catch (unknown) {
+      fail(unknown)
+    } finally {
+      usersLoading.value = false
+    }
+  }
+
+  async function loadUserDetail(id: number): Promise<void> {
+    usersLoading.value = true
+    error.value = null
+    try {
+      selectedUser.value = await fetchUserDetail(id)
+    } catch (unknown) {
+      fail(unknown)
+    } finally {
+      usersLoading.value = false
+    }
+  }
+
   return {
     categories,
     products,
@@ -120,5 +203,16 @@ export const useAdminStore = defineStore('admin', () => {
     removeProduct,
     setStock,
     setFeatured,
+    orders,
+    orderFilter,
+    ordersLoading,
+    users,
+    selectedUser,
+    usersLoading,
+    loadOrders,
+    setOrderStatus,
+    setOrderPayment,
+    loadUsers,
+    loadUserDetail,
   }
 })

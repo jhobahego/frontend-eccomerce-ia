@@ -134,3 +134,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/components/AssistantPanel.vue, src/App.vue (launcher + cierre al navegar), src/__tests__/assistant.spec.ts, e2e/assistant.spec.ts
 - decision: diálogo overlay sin ruta (no interrumpe la compra); sin campo de texto a propósito (una caja de chat prometería respuestas); copy fijo pineado; navegar cierra el panel; foco al abrir y retorno al lanzador
 - blocker: none
+
+## T012 — 2026-09-27
+- status: complete
+- red: imports inexistentes → 8 assertion reds (contratos admin orders/users + store)
+- green: 8 unit admin-orders + 4 e2e admin-orders; total `135 unit + 31 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde (JS 159 KB < 250 KB)
+- triangulation: e2e 2 rojos propios (strict-mode por textos duplicados + label ambiguo y options ocultas — test, no código); flake intermitente de admin-catalog/products solo en combo paralelo (test de ~28s cerca del timeout; pasa aislado y en repetición — carga, no regresión)
+- files: src/api/admin.ts (fetchAllOrders + transiciones por query + fetchUsers/fetchUserDetail), src/stores/admin.ts (orders/orderFilter/users/selectedUser), src/router/routes/admin.ts (/admin/pedidos, /admin/usuarios, /admin/usuarios/:id), src/views/AdminOrdersView.vue, src/views/AdminUsersView.vue, src/views/AdminUserDetailView.vue, src/views/AdminView.vue (dashboard enlaza pedidos/usuarios), src/mocks/stubBackend.ts (pedido mutable por instancia), src/__tests__/admin-orders.spec.ts, e2e/admin-orders.spec.ts
+- decision: lista admin sirve summaries (el snapshot tipa `Order[]` en /all pero el stub sirve summaries — desviación stub-defined pineada como el resto); transiciones solo-query sin body (clase C1); el stub persiste estado del pedido por instancia para que la propagación admin→cliente sea observable; filtro por estado servido; DenySilent reutiliza guards (sin gate nuevo)
+- blocker: none

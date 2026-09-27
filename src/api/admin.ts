@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
-import type { Category, Product } from './types'
+import type { OrderSummary } from './orders'
+import type { Category, Order, OrderStatus, PaymentStatus, Product, User } from './types'
 
 /**
  * Admin catalog writes (T010). Reads reuse the public catalog layer
@@ -96,4 +97,35 @@ export function setProductStock(id: number, quantity: number): Promise<Product> 
 
 export function fetchLowStock(): Promise<Product[]> {
   return apiRequest<Product[]>('/api/v1/products/low-stock')
+}
+
+/**
+ * Admin orders + users (T012). The list endpoint serves summaries (the same
+ * `OrderSummary` shape as the owned history); transitions return the full
+ * `Order` and speak REQUIRED QUERY params with no body (review C1 class).
+ */
+export function fetchAllOrders(filter?: { status?: string }): Promise<OrderSummary[]> {
+  const query = filter?.status ? `?status=${encodeURIComponent(filter.status)}` : ''
+  return apiRequest<OrderSummary[]>(`/api/v1/orders/all${query}`)
+}
+
+export function updateOrderStatus(id: number, status: OrderStatus): Promise<Order> {
+  return apiRequest<Order>(`/api/v1/orders/${id}/status?new_status=${encodeURIComponent(status)}`, {
+    method: 'PUT',
+  })
+}
+
+export function updateOrderPayment(id: number, payment: PaymentStatus): Promise<Order> {
+  return apiRequest<Order>(
+    `/api/v1/orders/${id}/payment-status?payment_status=${encodeURIComponent(payment)}`,
+    { method: 'PUT' },
+  )
+}
+
+export function fetchUsers(): Promise<User[]> {
+  return apiRequest<User[]>('/api/v1/users/')
+}
+
+export function fetchUserDetail(id: number): Promise<User> {
+  return apiRequest<User>(`/api/v1/users/${id}`)
 }

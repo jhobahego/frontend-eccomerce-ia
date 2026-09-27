@@ -77,6 +77,13 @@
 - Sin backend ni stub: la API no expone IA, el hueco es puramente presentacional (launcher permanente + diálogo con copy fijo y caminos manuales a rutas reales).
 - Nada de input de chat, nada de respuestas generadas, nada que bloquee: el panel se cierra con Escape, con botón y al navegar.
 
+## 2026-09-27 — T012 admin de pedidos/usuarios + propagación (complete)
+
+- Lista admin sobre summaries (mismo shape que el historial propio); el snapshot pide `Order[]` en `/all` pero el stub sirve summaries — desviación stub-defined pineada en tests, no deriva silenciosa.
+- Transiciones de estado/pago solo-query sin body (misma clase C1 de T004-review); el store adopta la respuesta en la lista sin refetch (misma clase que cancel en T009).
+- El stub persiste el pedido por instancia (status/payment/cancel) para que la propagación admin→cliente sea observable en lecturas y tracking dentro de un mismo test; instancias frescas arrancan en pending y la suite de contrato sigue verde.
+- Filtro de pedidos por estado servido (`?status=`); usuarios listar/ver sin mutación (fuera de alcance v1).
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
