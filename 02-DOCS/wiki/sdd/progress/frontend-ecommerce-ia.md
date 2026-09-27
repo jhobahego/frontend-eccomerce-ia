@@ -98,3 +98,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/cart.ts (endpoints + guest-id versionado), src/stores/cart.ts, src/router/routes/cart.ts, src/views/CartView.vue, src/components/ProductCard.vue (añadir), src/views/ProductView.vue (cantidad + añadir), src/views/LoginView.vue + RegisterView.vue (mergeOnLogin), src/App.vue (link Cesta), src/__tests__/cart.spec.ts, e2e/cart.spec.ts
 - decision: guest-id perezoso con clave versionada (valor corrupto se ignora); mutaciones refetchean totales servidos (cero aritmética local); cantidad optimista con rollback a snapshot; merge una sola vez tras login y suelta el guest-id (nunca bloquea la navegación); validateStock solo informa (T008 lo hace cumplir); ediciones persistentes quedan en unit (el stub sin estado no las retiene; quitar/vaciar sí son e2e-deterministas)
 - blocker: none
+
+## T008 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 6 assertion reds (contrato OrderCreate + gates)
+- green: 7 unit orders + 1 stub-contract (consume) + 2 e2e checkout; total `103 unit + 18 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: el e2e de reseteo cazó límite real del stub con la unit en verde (refetch tras pedir resucitaba la cesta sin estado; fix: flag `orderPlaced` — pedir consume la cesta, pineado en contract test). Un rojo intermedio fue helper de test que tragaba el 409.
+- files: src/api/orders.ts (OrderCreate + validación), src/stores/orders.ts (gates), src/router/routes/orders.ts (/checkout con requiresAuth), src/views/CheckoutView.vue, src/mocks/stubBackend.ts (consume), src/__tests__/orders.spec.ts (+1 caso en stub-contract), e2e/checkout.spec.ts
+- decision: solo create-from-cart (direct cortado, la spec no lo pide); checkout exige login (invitado va a login con returnTo y reanuda); cadena form→cesta→disponibilidad→POST (BLOCKED nunca postea; 409 → mensaje español sin filtrar); pago informativo por select; éxito muestra número + resetea cesta; billing/notas opcionales recortadas si vacías
+- blocker: none

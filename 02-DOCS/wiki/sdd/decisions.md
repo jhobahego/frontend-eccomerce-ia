@@ -54,6 +54,12 @@
 - Invariante anti-float en mutaciones: tras cada escritura se refetchea la cesta; los totales que pinta la vista son siempre los servidos. El rollback optimista revierte al snapshot ante cualquier fallo posterior.
 - Sin cambios al stub T004: el stub sin estado retiene añadir/fusionar/vaciar de forma determinista pero no ediciones; por eso el e2e cubre persistencia (#15), fusión (#4) y vaciado, y la edición con rollback queda en unit con transporte mockeado.
 
+## 2026-09-26 — T008 checkout bloqueante (complete)
+
+- `placeOrder` como cadena de gates que nunca postea condenada: formulario → cesta no vacía → disponibilidad servida → POST. `BLOCKED` es bucket propio de UI (no viaja al servidor); el 409 se traduce a español sin filtrar detalle ajeno.
+- El stub ganó estado mínimo (`orderPlaced`: pedir consume la cesta en lecturas/validate/summary), pineado en contract test; las instancias frescas por llamada dejan el resto de la suite intacta.
+- `/checkout` con `requiresAuth` (el invitado reanuda vía T005); éxito en-vista con número visible y cesta reseteada; el historial/seguimiento queda a T009.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

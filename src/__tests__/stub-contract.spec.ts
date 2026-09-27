@@ -472,6 +472,24 @@ describe('stub backend decisions (T004 review fold)', () => {
     })
   })
 
+  it('placing an order consumes the cart (T008)', () => {
+    const backend = createStubBackend()
+    expect(
+      backend.handle({ method: 'GET', url: '/api/v1/cart/' }).body,
+    ).toMatchObject({ total_items: 2 })
+    const placed = backend.handle({ method: 'POST', url: '/api/v1/orders/' })
+    expect(placed.status).toBe(200)
+    expect(backend.handle({ method: 'GET', url: '/api/v1/cart/' }).body).toMatchObject({
+      items: [],
+      total_items: 0,
+      total_amount: '0.00',
+    })
+    expect(backend.handle({ method: 'GET', url: '/api/v1/cart/validate' }).body).toEqual({
+      valid: true,
+      issues: [],
+    })
+  })
+
   it('track serves a stub-defined timeline; unknown contracts fail loud', () => {
     const track = call('GET', '/api/v1/orders/9/track')
     expect(track.body).toMatchObject({

@@ -218,6 +218,11 @@ export function createStubBackend(options: StubBackendOptions = {}): {
 
   const fullCart = options.cart === 'empty' ? null : stubCart
 
+  // Ordering consumes the cart (T008): once this instance mints an order,
+  // every cart read serves empty — the real backend deactivates the cart the
+  // same way, so refetch-after-order stays empty deterministically.
+  let orderPlaced = false
+
   function bearerOf(headers: Record<string, string>): string | null {
     const header = headers['authorization'] ?? headers['Authorization'] ?? ''
     const match = /^Bearer (.+)$/i.exec(header)
@@ -259,7 +264,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
   }
 
   function servedCart(): typeof stubCart {
-    if (fullCart === null) {
+    if (orderPlaced || fullCart === null) {
       return { ...stubCart, items: [], total_items: 0, total_amount: '0.00' }
     }
     return fullCart
@@ -475,7 +480,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
       }
 
       case 'GET /api/v1/cart/summary': {
-        if (fullCart === null) {
+        if (orderPlaced || fullCart === null) {
           return {
             status: 200,
             body: { ...stubBackendCartSummary, total_items: 0, total_amount: '0.00', items_count: 0 },
@@ -485,7 +490,10 @@ export function createStubBackend(options: StubBackendOptions = {}): {
       }
 
       case 'GET /api/v1/cart/validate': {
-        if (options.stock === 'blocked' && fullCart !== null) {
+        if (orderPlaced || fullCart === null) {
+          return { status: 200, body: { valid: true, issues: [] } }
+        }
+        if (options.stock === 'blocked') {
           return {
             status: 200,
             body: {
@@ -582,6 +590,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         if (options.stock === 'blocked' && fullCart !== null) {
           return { status: 409, body: { detail: STUB_ERROR_DETAILS.insufficientStock } }
         }
+        orderPlaced = true
         return { status: 200, body: stubOrder }
       }
 
