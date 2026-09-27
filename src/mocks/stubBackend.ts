@@ -1,4 +1,10 @@
-import type { OrderStatus, PaymentStatus, Product, User } from '../api/types'
+import type {
+  Category,
+  OrderStatus,
+  PaymentStatus,
+  Product,
+  User,
+} from '../api/types'
 import { ORDER_STATUSES, PAYMENT_STATUSES } from '../api/types'
 
 import {
@@ -10,9 +16,7 @@ import {
   stubCart,
   stubCartItem,
   stubCategoryList,
-  stubCategoryRoots,
   stubCategoryTree,
-  stubChildCategory,
   stubOrder,
   stubOrderSummary,
   stubProduct,
@@ -209,12 +213,46 @@ function idAfter(pathname: string, collection: string): number {
   return Number(segments[segments.indexOf(collection) + 1])
 }
 
+/** Server-derived display fields, recomputed after every write. */
+function deriveProduct(base: Product): Product {
+  const current = base.sale_price ?? base.price
+  return {
+    ...base,
+    current_price: current,
+    is_in_stock: base.stock_quantity > 0,
+    is_low_stock: base.stock_quantity <= base.min_stock_level,
+  }
+}
+
+function optionalText(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null
+}
+
+function optionalCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) ? value : undefined
+}
+
+function validationError(field: string, message: string): StubResponse {
+  return {
+    status: 422,
+    body: { detail: [{ loc: ['body', field], msg: message, type: 'value_error' }] },
+  }
+}
+
 export function createStubBackend(options: StubBackendOptions = {}): {
   handle: (request: StubRequest) => StubResponse
 } {
   const customer: User = { ...stubUser }
   const admin: User = { ...stubAdmin }
   const defaultIdentity = options.user === 'admin' ? admin : customer
+
+  // Mutable catalog (T010): reads serve these arrays, writes mutate them, so
+  // admin CRUD is observable in later reads within one instance. Fresh
+  // instances start from the fixtures, keeping the contract suite green.
+  const categories: Category[] = stubCategoryList.map((entry) => ({ ...entry }))
+  const products: Product[] = stubProductList.map((entry) => ({ ...entry }))
+  let nextCategoryId = 100
+  let nextProductId = 100
 
   const fullCart = options.cart === 'empty' ? null : stubCart
 
@@ -271,7 +309,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
   }
 
   function priceFor(productId: number): Product {
-    return stubProductList.find((product) => product.id === productId) ?? stubProduct
+    return products.find((product) => product.id === productId) ?? stubProduct
   }
 
   function handle(request: StubRequest): StubResponse {
@@ -370,12 +408,76 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         return { status: 200, body: found }
       }
 
+      case 'POST /api/v1/categories/': {
+        const body = parseBody(request.bodyText)
+        if (typeof body['name'] !== 'string' || body['name'].trim() === '') {
+          return validationError('name', 'Field required')
+        }
+        if (typeof body['slug'] !== 'string' || body['slug'].trim() === '') {
+          return validationError('slug', 'Field required')
+        }
+        const created: Category = {
+          id: nextCategoryId++,
+          name: (body['name'] as string).trim(),
+          slug: (body['slug'] as string).trim(),
+          description: optionalText(body['description']),
+          is_active: typeof body['is_active'] === 'boolean' ? body['is_active'] : true,
+          parent_id: optionalCount(body['parent_id']) ?? null,
+          image_url: optionalText(body['image_url']),
+          sort_order: optionalCount(body['sort_order']) ?? 0,
+          created_at: new Date().toISOString(),
+          updated_at: null,
+        }
+        categories.push(created)
+        return { status: 200, body: created }
+      }
+
+      case 'PUT /api/v1/categories/{category_id}': {
+        const wanted = Number(lastSegment(url.pathname))
+        const found = categories.find((category) => category.id === wanted)
+        if (found === undefined) {
+          return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
+        }
+        const body = parseBody(request.bodyText)
+        if (typeof body['name'] === 'string' && body['name'].trim() !== '') {
+          found.name = body['name'].trim()
+        }
+        if (typeof body['description'] === 'string' || body['description'] === null) {
+          found.description = optionalText(body['description'])
+        }
+        if (typeof body['is_active'] === 'boolean') {
+          found.is_active = body['is_active']
+        }
+        if (typeof body['parent_id'] === 'number' || body['parent_id'] === null) {
+          found.parent_id = optionalCount(body['parent_id']) ?? null
+        }
+        if (typeof body['image_url'] === 'string' || body['image_url'] === null) {
+          found.image_url = optionalText(body['image_url'])
+        }
+        const order = optionalCount(body['sort_order'])
+        if (order !== undefined) {
+          found.sort_order = order
+        }
+        found.updated_at = new Date().toISOString()
+        return { status: 200, body: { ...found } }
+      }
+
+      case 'DELETE /api/v1/categories/{category_id}': {
+        const wanted = Number(lastSegment(url.pathname))
+        const index = categories.findIndex((category) => category.id === wanted)
+        if (index === -1) {
+          return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
+        }
+        const [removed] = categories.splice(index, 1)
+        return { status: 200, body: removed }
+      }
+
       case 'GET /api/v1/categories/': {
-        return { status: 200, body: stubCategoryList.slice(0) }
+        return { status: 200, body: categories.slice(0) }
       }
 
       case 'GET /api/v1/categories/roots': {
-        return { status: 200, body: stubCategoryRoots.slice(0) }
+        return { status: 200, body: categories.filter((entry) => entry.parent_id === null) }
       }
 
       case 'GET /api/v1/categories/hierarchy': {
@@ -384,7 +486,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
 
       case 'GET /api/v1/categories/{category_id}': {
         const wanted = Number(lastSegment(url.pathname))
-        const found = stubCategoryList.find((category) => category.id === wanted)
+        const found = categories.find((category) => category.id === wanted)
         if (found === undefined) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
@@ -393,23 +495,19 @@ export function createStubBackend(options: StubBackendOptions = {}): {
 
       case 'GET /api/v1/categories/{category_id}/subcategories': {
         const wanted = idAfter(url.pathname, 'categories')
-        const children =
-          wanted === stubCategoryRoots[0].id ? [{ ...stubChildCategory }] : []
-        return { status: 200, body: children }
+        return { status: 200, body: categories.filter((entry) => entry.parent_id === wanted) }
       }
 
       case 'GET /api/v1/categories/{category_id}/with-products': {
         const wanted = idAfter(url.pathname, 'categories')
-        const category = stubCategoryList.find((entry) => entry.id === wanted)
+        const category = categories.find((entry) => entry.id === wanted)
         if (category === undefined) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
-        const products = stubProductList.filter(
-          (product) => product.category_id === wanted,
-        )
+        const listed = products.filter((product) => product.category_id === wanted)
         return {
           status: 200,
-          body: { ...category, products, product_count: products.length },
+          body: { ...category, products: listed, product_count: listed.length },
         }
       }
 
@@ -418,12 +516,12 @@ export function createStubBackend(options: StubBackendOptions = {}): {
       case 'POST /api/v1/products/search': {
         return {
           status: 200,
-          body: applyProductFilters([...stubProductList], productQueryOf(url.searchParams)),
+          body: applyProductFilters([...products], productQueryOf(url.searchParams)),
         }
       }
 
       case 'GET /api/v1/products/featured': {
-        return { status: 200, body: [stubProduct] }
+        return { status: 200, body: products.filter((product) => product.is_featured) }
       }
 
       case 'GET /api/v1/products/low-stock': {
@@ -433,15 +531,132 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         }
         return {
           status: 200,
-          body: stubProductList.filter((product) => product.is_low_stock),
+          body: products.filter((product) => product.is_low_stock),
         }
+      }
+
+      case 'POST /api/v1/products/': {
+        const body = parseBody(request.bodyText)
+        for (const field of ['name', 'sku', 'price', 'slug']) {
+          if (typeof body[field] !== 'string' || body[field].trim() === '') {
+            return validationError(field, 'Field required')
+          }
+        }
+        const price = (body['price'] as string).trim()
+        if (!/^\d+\.\d{2}$/.test(price)) {
+          return validationError('price', 'Invalid amount, expected NN.NN')
+        }
+        const categoryId = optionalCount(body['category_id'])
+        if (categoryId === undefined || !categories.some((entry) => entry.id === categoryId)) {
+          return validationError('category_id', 'Unknown category')
+        }
+        const created: Product = deriveProduct({
+          id: nextProductId++,
+          name: (body['name'] as string).trim(),
+          slug: (body['slug'] as string).trim(),
+          sku: (body['sku'] as string).trim(),
+          price,
+          sale_price:
+            typeof body['sale_price'] === 'string' ? (body['sale_price'] as string) : null,
+          description: optionalText(body['description']),
+          short_description: optionalText(body['short_description']),
+          stock_quantity: optionalCount(body['stock_quantity']) ?? 0,
+          min_stock_level: optionalCount(body['min_stock_level']) ?? 0,
+          is_active: typeof body['is_active'] === 'boolean' ? body['is_active'] : true,
+          is_featured: body['is_featured'] === true,
+          images: Array.isArray(body['images']) ? (body['images'] as string[]) : null,
+          category_id: categoryId,
+          created_at: new Date().toISOString(),
+          updated_at: null,
+          current_price: price,
+          is_in_stock: true,
+          is_low_stock: false,
+        })
+        products.push(created)
+        return { status: 200, body: created }
+      }
+
+      case 'PUT /api/v1/products/{product_id}': {
+        const wanted = Number(lastSegment(url.pathname))
+        const found = products.find((product) => product.id === wanted)
+        if (found === undefined) {
+          return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
+        }
+        const body = parseBody(request.bodyText)
+        if (typeof body['name'] === 'string' && body['name'].trim() !== '') {
+          found.name = body['name'].trim()
+        }
+        if (typeof body['price'] === 'string') {
+          const price = body['price'].trim()
+          if (!/^\d+\.\d{2}$/.test(price)) {
+            return validationError('price', 'Invalid amount, expected NN.NN')
+          }
+          found.price = price
+        }
+        if (typeof body['sale_price'] === 'string' || body['sale_price'] === null) {
+          found.sale_price = optionalText(body['sale_price'])
+        }
+        if (typeof body['description'] === 'string' || body['description'] === null) {
+          found.description = optionalText(body['description'])
+        }
+        const stock = optionalCount(body['stock_quantity'])
+        if (stock !== undefined) {
+          found.stock_quantity = stock
+        }
+        const floor = optionalCount(body['min_stock_level'])
+        if (floor !== undefined) {
+          found.min_stock_level = floor
+        }
+        const categoryId = optionalCount(body['category_id'])
+        if (categoryId !== undefined) {
+          found.category_id = categoryId
+        }
+        if (typeof body['is_active'] === 'boolean') {
+          found.is_active = body['is_active']
+        }
+        if (typeof body['is_featured'] === 'boolean') {
+          found.is_featured = body['is_featured']
+        }
+        found.updated_at = new Date().toISOString()
+        Object.assign(found, deriveProduct(found))
+        return { status: 200, body: { ...found } }
+      }
+
+      case 'DELETE /api/v1/products/{product_id}': {
+        const wanted = Number(lastSegment(url.pathname))
+        const index = products.findIndex((product) => product.id === wanted)
+        if (index === -1) {
+          return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
+        }
+        const [removed] = products.splice(index, 1)
+        return { status: 200, body: removed }
+      }
+
+      case 'PUT /api/v1/products/{product_id}/stock': {
+        // The id precedes `/stock` (same `idAfter` class as cancel/status).
+        const id = idAfter(url.pathname, 'products')
+        const found = products.find((product) => product.id === id)
+        if (found === undefined) {
+          return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
+        }
+        const body = parseBody(request.bodyText)
+        const quantity = optionalCount(body['quantity'])
+        // Only `set` is pinned for v1 (absolute quantity); the snapshot
+        // leaves the operation vocabulary untyped.
+        if (quantity === undefined || quantity < 0 || body['operation'] !== 'set') {
+          return validationError('quantity', 'Send {quantity, operation:"set"}')
+        }
+        found.stock_quantity = quantity
+        found.updated_at = new Date().toISOString()
+        Object.assign(found, deriveProduct(found))
+        return { status: 200, body: { ...found } }
       }
 
       case 'GET /api/v1/products/category/{category_id}': {
         const wanted = Number(lastSegment(url.pathname))
         return {
           status: 200,
-          body: applyProductFilters([...stubProductList], {
+          body: applyProductFilters([...products], {
             ...productQueryOf(url.searchParams),
             category_id: wanted,
           }),
@@ -451,28 +666,40 @@ export function createStubBackend(options: StubBackendOptions = {}): {
       case 'GET /api/v1/products/slug/{slug}':
       case 'GET /api/v1/products/sku/{sku}': {
         const wanted = lastSegment(url.pathname).toLowerCase()
-        const found = stubProductList.find(
+        const found = products.find(
           (product) =>
             product.slug.toLowerCase() === wanted || product.sku.toLowerCase() === wanted,
         )
         if (found === undefined) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
-        return { status: 200, body: { ...found, category: stubCategoryRoots[0] } }
+        return {
+          status: 200,
+          body: {
+            ...found,
+            category: categories.find((entry) => entry.id === found.category_id) ?? null,
+          },
+        }
       }
 
       case 'GET /api/v1/products/{product_id}': {
         const wanted = Number(lastSegment(url.pathname))
-        const found =
-          stubProductList.find((product) => product.id === wanted) ?? null
+        const found = products.find((product) => product.id === wanted) ?? null
         if (found === null) {
           return { status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } }
         }
-        return { status: 200, body: { ...found, category: stubCategoryRoots[0] } }
+        return {
+          status: 200,
+          body: {
+            ...found,
+            category: categories.find((entry) => entry.id === found.category_id) ?? null,
+          },
+        }
       }
 
       case 'GET /api/v1/products/{product_id}/similar': {
-        return { status: 200, body: [stubProductList[1]] }
+        const fallback = products[1] ?? products[0] ?? null
+        return { status: 200, body: fallback === null ? [] : [fallback] }
       }
 
       case 'GET /api/v1/cart/': {

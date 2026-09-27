@@ -149,6 +149,9 @@ describe('stub transport contract vs snapshot (T004)', () => {
       'PUT /api/v1/users/me',
       'GET /api/v1/users/',
       'GET /api/v1/users/{user_id}',
+      'POST /api/v1/categories/',
+      'PUT /api/v1/categories/{category_id}',
+      'DELETE /api/v1/categories/{category_id}',
       'GET /api/v1/categories/',
       'GET /api/v1/categories/roots',
       'GET /api/v1/categories/hierarchy',
@@ -161,6 +164,10 @@ describe('stub transport contract vs snapshot (T004)', () => {
       'GET /api/v1/products/featured',
       'GET /api/v1/products/low-stock',
       'GET /api/v1/products/category/{category_id}',
+      'POST /api/v1/products/',
+      'PUT /api/v1/products/{product_id}',
+      'DELETE /api/v1/products/{product_id}',
+      'PUT /api/v1/products/{product_id}/stock',
       'GET /api/v1/products/slug/{slug}',
       'GET /api/v1/products/sku/{sku}',
       'GET /api/v1/products/{product_id}',
@@ -488,6 +495,87 @@ describe('stub backend decisions (T004 review fold)', () => {
       valid: true,
       issues: [],
     })
+  })
+
+  it('catalog writes persist per instance with validation (T010)', () => {
+    const backend = createStubBackend()
+    const created = backend.handle({
+      method: 'POST',
+      url: '/api/v1/categories/',
+      bodyText: JSON.stringify({ name: 'Bebidas', slug: 'bebidas' }),
+    })
+    expect(created.status).toBe(200)
+    expect(created.body).toMatchObject({ name: 'Bebidas', slug: 'bebidas' })
+    const createdId = (created.body as { id: number }).id
+    const list = backend.handle({ method: 'GET', url: '/api/v1/categories/' })
+    expect((list.body as unknown[]).length).toBeGreaterThan(3)
+    expect(
+      backend.handle({
+        method: 'POST',
+        url: '/api/v1/categories/',
+        bodyText: JSON.stringify({ name: 'Sin slug' }),
+      }).status,
+    ).toBe(422)
+    const renamed = backend.handle({
+      method: 'PUT',
+      url: `/api/v1/categories/${createdId}`,
+      bodyText: JSON.stringify({ name: 'Bebidas frías' }),
+    })
+    expect(renamed.body).toMatchObject({ name: 'Bebidas frías' })
+    expect(
+      backend.handle({ method: 'DELETE', url: `/api/v1/categories/${createdId}` }).status,
+    ).toBe(200)
+    expect(
+      backend.handle({ method: 'GET', url: `/api/v1/categories/${createdId}` }).status,
+    ).toBe(404)
+  })
+
+  it('product writes validate, derive and feed stock alerts (T010)', () => {
+    const backend = createStubBackend()
+    const created = backend.handle({
+      method: 'POST',
+      url: '/api/v1/products/',
+      bodyText: JSON.stringify({
+        name: 'Cafetera',
+        slug: 'cafetera',
+        sku: 'CAF-001',
+        price: '49.99',
+        category_id: 2,
+        stock_quantity: 3,
+        min_stock_level: 5,
+      }),
+    })
+    expect(created.status).toBe(200)
+    expect(created.body).toMatchObject({
+      current_price: '49.99',
+      is_in_stock: true,
+      is_low_stock: true,
+    })
+    const createdId = (created.body as { id: number }).id
+    expect(
+      backend.handle({
+        method: 'POST',
+        url: '/api/v1/products/',
+        bodyText: JSON.stringify({ name: 'Rota', slug: 'rota', sku: 'ROT-1', price: '9.9' }),
+      }).status,
+    ).toBe(422)
+    const stocked = backend.handle({
+      method: 'PUT',
+      url: `/api/v1/products/${createdId}/stock`,
+      bodyText: JSON.stringify({ quantity: 40, operation: 'set' }),
+    })
+    expect(stocked.body).toMatchObject({ stock_quantity: 40, is_low_stock: false })
+    const low = backend.handle({
+      method: 'GET',
+      url: '/api/v1/products/low-stock',
+      headers: { authorization: `Bearer ${STUB_ADMIN_ACCESS_TOKEN}` },
+    })
+    expect(
+      (low.body as { slug: string }[]).map((product) => product.slug),
+    ).toContain('tetera')
+    expect(
+      backend.handle({ method: 'DELETE', url: `/api/v1/products/${createdId}` }).status,
+    ).toBe(200)
   })
 
   it('track serves a stub-defined timeline; unknown contracts fail loud', () => {

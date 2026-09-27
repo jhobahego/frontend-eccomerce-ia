@@ -116,3 +116,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/users.ts (whitelist de perfil), src/api/orders.ts (labels + summaries + tracking + cancel), src/stores/orders.ts (history/detail/cancel), src/router/routes/account.ts (/cuenta), src/router/routes/orders.ts (/pedidos, /pedidos/:id), src/views/AccountView.vue, src/views/OrdersView.vue, src/views/OrderDetailView.vue, src/App.vue (Mi cuenta/Mis pedidos), src/__tests__/account.spec.ts, e2e/account.spec.ts
 - decision: PUT de perfil a nivel de tipo sin flags (C2 imposible por construcción); etiquetas de estado en español con fallback crudo; cancel-button solo en pending/confirmed (servidor autoritativo, 409/422 → guía); tracking sin ruta pública (privado por ausencia); éxito de checkout enlazará a historial en T009 — hecho vía nav Mis pedidos
 - blocker: none
+
+## T010 — 2026-09-26
+- status: complete
+- red: imports inexistentes → esqueletos → 8 assertion reds (writes + store)
+- green: 10 unit admin + 2 stub-contract (writes) + 4 e2e admin; total `123 unit + 25 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde
+- triangulation: pin de conteo del manifest (44→51) actualizado a propósito; dos rojos e2e fueron selectores propios (labels duplicadas por formularios de facturación/edición)
+- files: src/mocks/stubRoutes.ts + stubBackend.ts (7 writes + catálogo mutable por instancia), src/api/admin.ts, src/stores/admin.ts, src/router/routes/admin.ts, src/views/AdminView.vue (dashboard), src/views/AdminCategoriesView.vue, src/views/AdminProductsView.vue, src/__tests__/admin-catalog.spec.ts (+2 casos stub-contract), e2e/admin-catalog.spec.ts
+- decision: lecturas derivan de listas mutables (featured/low-stock/roots/subcategorías recalculados; hierarchy estática); derivados de producto (current/in-stock/low) recalculados tras cada escritura; stock solo `set` pineado (vocabulario sin tipo en snapshot); borrados directos (T013 añade confirmación); sin reorden en v1 con assert de ausencia
+- blocker: none

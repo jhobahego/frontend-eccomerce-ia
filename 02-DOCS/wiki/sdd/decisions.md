@@ -66,6 +66,12 @@
 - Pedidos propios: historial + detalle con tracking en paralelo; cancel adopta la respuesta (sin refetch ante stub sin estado) y la propaga al historial; estados en español.
 - Sin seguimiento público: no existe ruta ni enlace fuera de la zona autenticada.
 
+## 2026-09-26 — T010 admin de catálogo (complete)
+
+- El stub ganó catálogo mutable por instancia (lecturas derivan, escrituras persisten, validación 422 estilo FastAPI); instancias frescas mantienen verde el resto de la suite.
+- Admin reusa lecturas públicas (misma verdad que el cliente) y refetchea tras escribir; aviso de stock bajo solo en zona admin (el cliente solo ve disponible).
+- `/admin` es dashboard; retiros directos hasta T013.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

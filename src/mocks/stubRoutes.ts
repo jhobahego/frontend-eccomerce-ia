@@ -21,6 +21,9 @@ export const STUB_ROUTES: StubRoute[] = [
   { method: 'PUT', path: '/api/v1/users/me' },
   { method: 'GET', path: '/api/v1/users/' },
   { method: 'GET', path: '/api/v1/users/{user_id}' },
+  { method: 'POST', path: '/api/v1/categories/' },
+  { method: 'PUT', path: '/api/v1/categories/{category_id}' },
+  { method: 'DELETE', path: '/api/v1/categories/{category_id}' },
   { method: 'GET', path: '/api/v1/categories/' },
   { method: 'GET', path: '/api/v1/categories/roots' },
   { method: 'GET', path: '/api/v1/categories/hierarchy' },
@@ -35,6 +38,10 @@ export const STUB_ROUTES: StubRoute[] = [
   { method: 'GET', path: '/api/v1/products/featured' },
   { method: 'GET', path: '/api/v1/products/low-stock' },
   { method: 'GET', path: '/api/v1/products/category/{category_id}' },
+  { method: 'POST', path: '/api/v1/products/' },
+  { method: 'PUT', path: '/api/v1/products/{product_id}' },
+  { method: 'DELETE', path: '/api/v1/products/{product_id}' },
+  { method: 'PUT', path: '/api/v1/products/{product_id}/stock' },
   { method: 'GET', path: '/api/v1/products/slug/{slug}' },
   { method: 'GET', path: '/api/v1/products/sku/{sku}' },
   { method: 'GET', path: '/api/v1/products/{product_id}' },
@@ -61,9 +68,8 @@ export const STUB_ROUTES: StubRoute[] = [
   { method: 'GET', path: '/api/v1/health/' },
   { method: 'GET', path: '/api/v1/health/db' },
 ]
-// Category/product WRITE routes (POST/PUT/DELETE) are T010's seam, order
-// writes beyond status/payment belong to T012 — both register here when
-// their task lands, never earlier.
+// Order writes beyond status/payment belong to T012 — they register here
+// when that task lands, never earlier.
 
 interface RoutePattern {
   method: string

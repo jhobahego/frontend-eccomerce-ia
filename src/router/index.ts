@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import { installSessionGuards } from './guards'
 import { accountRoutes } from './routes/account'
+import { adminRoutes } from './routes/admin'
 import { authRoutes } from './routes/auth'
 import { baseRoutes } from './routes/base'
 import { cartRoutes } from './routes/cart'
@@ -19,6 +20,7 @@ const router = createRouter({
     ...cartRoutes,
     ...orderRoutes,
     ...accountRoutes,
+    ...adminRoutes,
     ...baseRoutes,
   ],
 })
