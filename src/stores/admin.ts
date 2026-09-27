@@ -23,8 +23,17 @@ import {
 } from '../api/admin'
 import { fetchCategories, searchProducts } from '../api/catalog'
 import { normalizeError } from '../api/errors'
-import type { OrderSummary } from '../api/orders'
+import { fetchOrder, type OrderSummary } from '../api/orders'
 import type { ApiError, Category, OrderStatus, PaymentStatus, Product, User } from '../api/types'
+
+/**
+ * Pure dependency check (T013): how many served products belong to a
+ * category. Kept outside the store so the unit suite pins the rule itself —
+ * the views only gate on the count.
+ */
+export function countCategoryProducts(products: Product[], categoryId: number): number {
+  return products.filter((product) => product.category_id === categoryId).length
+}
 
 /**
  * Admin catalog store (T010). Reads come from the public catalog layer (same
@@ -44,9 +53,14 @@ export const useAdminStore = defineStore('admin', () => {
   const users = ref<User[]>([])
   const selectedUser = ref<User | null>(null)
   const usersLoading = ref(false)
+  const orderProductIds = ref<number[]>([])
 
   function fail(unknown: unknown): void {
     error.value = normalizeError(unknown)
+  }
+
+  function hasMovements(productId: number): boolean {
+    return orderProductIds.value.includes(productId)
   }
 
   async function refreshLists(): Promise<void> {
@@ -188,6 +202,32 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  /**
+   * Order movements (T013): one product id per order containing it, read from
+   * served order details. A product "with movements" is one that shows up in
+   * at least one order — the confirmation gate reads `hasMovements`.
+   */
+  async function loadOrderMovements(): Promise<void> {
+    error.value = null
+    try {
+      const summaries = await fetchAllOrders()
+      const details = await Promise.all(summaries.map((entry) => fetchOrder(entry.id)))
+      const ids: number[] = []
+      for (const detail of details) {
+        const seenInOrder = new Set<number>()
+        for (const line of detail.items) {
+          if (!seenInOrder.has(line.product_id)) {
+            seenInOrder.add(line.product_id)
+            ids.push(line.product_id)
+          }
+        }
+      }
+      orderProductIds.value = ids
+    } catch (unknown) {
+      fail(unknown)
+    }
+  }
+
   return {
     categories,
     products,
@@ -209,10 +249,13 @@ export const useAdminStore = defineStore('admin', () => {
     users,
     selectedUser,
     usersLoading,
+    orderProductIds,
     loadOrders,
     setOrderStatus,
     setOrderPayment,
     loadUsers,
     loadUserDetail,
+    loadOrderMovements,
+    hasMovements,
   }
 })

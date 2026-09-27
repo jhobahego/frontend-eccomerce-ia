@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 
-import { useAdminStore } from '../stores/admin'
+import { countCategoryProducts, useAdminStore } from '../stores/admin'
 
 const admin = useAdminStore()
 
@@ -13,6 +13,9 @@ const createErrors = ref<Record<string, string>>({})
 const editingId = ref<number | null>(null)
 const editName = ref('')
 const editError = ref<string | null>(null)
+/** Category awaiting explicit retire confirmation (T013: only when it holds products). */
+const confirmingCategoryId = ref<number | null>(null)
+let lastTriggerId: string | null = null
 
 async function create(): Promise<void> {
   const invalid: Record<string, string> = {}
@@ -60,6 +63,56 @@ async function saveEdit(id: number): Promise<void> {
 
 function remove(id: number): void {
   void admin.removeCategory(id)
+}
+
+function productCount(id: number): number {
+  return countCategoryProducts(admin.products, id)
+}
+
+function focusDialog(): void {
+  void nextTick(() => {
+    document.getElementById('retire-category-dialog')?.focus()
+  })
+}
+
+function focusTrigger(): void {
+  if (lastTriggerId !== null) {
+    document.getElementById(lastTriggerId)?.focus()
+  }
+}
+
+/**
+ * Retire gate (T013): categories holding products ask explicitly; empty ones
+ * keep the direct removal from T010. No business logic here — just the gate.
+ */
+function askRemove(id: number): void {
+  if (productCount(id) === 0) {
+    remove(id)
+    return
+  }
+  confirmingCategoryId.value = id
+  lastTriggerId = `remove-category-${id}`
+  focusDialog()
+}
+
+function cancelRemove(): void {
+  confirmingCategoryId.value = null
+  focusTrigger()
+}
+
+function confirmRemove(): void {
+  const id = confirmingCategoryId.value
+  confirmingCategoryId.value = null
+  focusTrigger()
+  if (id !== null) {
+    remove(id)
+  }
+}
+
+function onDialogKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    cancelRemove()
+  }
 }
 
 function reload(): void {
@@ -116,7 +169,35 @@ onMounted(() => {
           <button type="button" @click="startEdit(node.id, node.name)">
             Editar {{ node.name }}
           </button>
-          <button type="button" @click="remove(node.id)">Eliminar {{ node.name }}</button>
+          <button
+            :id="`remove-category-${node.id}`"
+            type="button"
+            @click="askRemove(node.id)"
+          >
+            Eliminar {{ node.name }}
+          </button>
+          <div
+            v-if="confirmingCategoryId === node.id"
+            id="retire-category-dialog"
+            role="alertdialog"
+            :aria-labelledby="`retire-category-heading-${node.id}`"
+            :aria-describedby="`retire-category-desc-${node.id}`"
+            tabindex="-1"
+            @keydown="onDialogKeydown"
+          >
+            <h3 :id="`retire-category-heading-${node.id}`">Eliminar {{ node.name }}</h3>
+            <p :id="`retire-category-desc-${node.id}`">
+              {{
+                productCount(node.id) === 1
+                  ? 'Tiene 1 producto. '
+                  : `Tiene ${productCount(node.id)} productos. `
+              }}Esta acción no se puede deshacer.
+            </p>
+            <button type="button" @click="confirmRemove()">
+              Confirmar eliminación de {{ node.name }}
+            </button>
+            <button type="button" @click="cancelRemove()">Cancelar</button>
+          </div>
           <form v-if="editingId === node.id" @submit.prevent="saveEdit(node.id)">
             <label :for="`edit-category-name-${node.id}`">Nombre</label>
             <input :id="`edit-category-name-${node.id}`" v-model="editName" type="text" />

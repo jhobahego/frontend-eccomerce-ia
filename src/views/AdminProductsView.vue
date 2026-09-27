@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 
 import { formatAmount } from '../api/money'
 import { useAdminStore } from '../stores/admin'
@@ -18,6 +18,9 @@ const editingId = ref<number | null>(null)
 const editName = ref('')
 const stockingId = ref<number | null>(null)
 const stockQty = ref('')
+/** Product awaiting explicit retire confirmation (T013: only with order movements). */
+const confirmingProductId = ref<number | null>(null)
+let lastTriggerId: string | null = null
 
 function validPrice(raw: string): boolean {
   return /^\d+(\.\d{1,2})?$/.test(raw.trim())
@@ -85,6 +88,56 @@ function remove(id: number): void {
   void admin.removeProduct(id)
 }
 
+function movementCount(id: number): number {
+  return admin.orderProductIds.filter((entry) => entry === id).length
+}
+
+function focusDialog(): void {
+  void nextTick(() => {
+    document.getElementById('retire-product-dialog')?.focus()
+  })
+}
+
+function focusTrigger(): void {
+  if (lastTriggerId !== null) {
+    document.getElementById(lastTriggerId)?.focus()
+  }
+}
+
+/**
+ * Retire gate (T013): products with order movements ask explicitly; the rest
+ * keep the direct removal from T010. No business logic here — just the gate.
+ */
+function askRemove(id: number): void {
+  if (!admin.hasMovements(id)) {
+    remove(id)
+    return
+  }
+  confirmingProductId.value = id
+  lastTriggerId = `remove-product-${id}`
+  focusDialog()
+}
+
+function cancelRemove(): void {
+  confirmingProductId.value = null
+  focusTrigger()
+}
+
+function confirmRemove(): void {
+  const id = confirmingProductId.value
+  confirmingProductId.value = null
+  focusTrigger()
+  if (id !== null) {
+    remove(id)
+  }
+}
+
+function onDialogKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    cancelRemove()
+  }
+}
+
 function toggleFeatured(id: number, current: boolean): void {
   void admin.setFeatured(id, !current)
 }
@@ -107,11 +160,18 @@ async function saveStock(id: number): Promise<void> {
 }
 
 function reload(): void {
-  void admin.loadAll()
+  void loadData()
+}
+
+async function loadData(): Promise<void> {
+  await admin.loadAll()
+  if (admin.error === null) {
+    await admin.loadOrderMovements()
+  }
 }
 
 onMounted(() => {
-  void admin.loadAll()
+  void loadData()
 })
 </script>
 
@@ -206,7 +266,35 @@ onMounted(() => {
           <button type="button" @click="startStock(item.id, item.stock_quantity)">
             Ajustar stock de {{ item.name }}
           </button>
-          <button type="button" @click="remove(item.id)">Eliminar {{ item.name }}</button>
+          <button
+            :id="`remove-product-${item.id}`"
+            type="button"
+            @click="askRemove(item.id)"
+          >
+            Eliminar {{ item.name }}
+          </button>
+          <div
+            v-if="confirmingProductId === item.id"
+            id="retire-product-dialog"
+            role="alertdialog"
+            :aria-labelledby="`retire-product-heading-${item.id}`"
+            :aria-describedby="`retire-product-desc-${item.id}`"
+            tabindex="-1"
+            @keydown="onDialogKeydown"
+          >
+            <h3 :id="`retire-product-heading-${item.id}`">Eliminar {{ item.name }}</h3>
+            <p :id="`retire-product-desc-${item.id}`">
+              {{
+                movementCount(item.id) === 1
+                  ? 'Aparece en 1 pedido. '
+                  : `Aparece en ${movementCount(item.id)} pedidos. `
+              }}Esta acción no se puede deshacer.
+            </p>
+            <button type="button" @click="confirmRemove()">
+              Confirmar eliminación de {{ item.name }}
+            </button>
+            <button type="button" @click="cancelRemove()">Cancelar</button>
+          </div>
           <form v-if="editingId === item.id" @submit.prevent="saveEdit(item.id)">
             <label :for="`edit-product-name-${item.id}`">Nombre</label>
             <input :id="`edit-product-name-${item.id}`" v-model="editName" type="text" />

@@ -143,3 +143,12 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/admin.ts (fetchAllOrders + transiciones por query + fetchUsers/fetchUserDetail), src/stores/admin.ts (orders/orderFilter/users/selectedUser), src/router/routes/admin.ts (/admin/pedidos, /admin/usuarios, /admin/usuarios/:id), src/views/AdminOrdersView.vue, src/views/AdminUsersView.vue, src/views/AdminUserDetailView.vue, src/views/AdminView.vue (dashboard enlaza pedidos/usuarios), src/mocks/stubBackend.ts (pedido mutable por instancia), src/__tests__/admin-orders.spec.ts, e2e/admin-orders.spec.ts
 - decision: lista admin sirve summaries (el snapshot tipa `Order[]` en /all pero el stub sirve summaries — desviación stub-defined pineada como el resto); transiciones solo-query sin body (clase C1); el stub persiste estado del pedido por instancia para que la propagación admin→cliente sea observable; filtro por estado servido; DenySilent reutiliza guards (sin gate nuevo)
 - blocker: none
+
+## T013 — 2026-09-27
+- status: complete
+- red: imports inexistentes → esqueletos → 5 assertion reds (helpers ausentes + vistas sin diálogo; el borrado directo sin dependencias ya pasaba)
+- green: 6 unit admin-retire + 2 e2e admin-retire; total `141 unit + 33 e2e`; `pnpm type-check` limpio; oxlint+eslint limpios; `pnpm build` verde (JS 162 KB < 250 KB)
+- triangulation: e2e 2/2 (Escape + cancelar abortan, confirmar retira); regresión admin-catalog 4/4 (sin dependencias sigue directo); una salida colgada del runner tras el primer pase (sin línea de resumen) no reprodujo al repetir — harness, no código
+- files: src/stores/admin.ts (countCategoryProducts puro + orderProductIds/hasMovements/loadOrderMovements), src/views/AdminCategoriesView.vue + AdminProductsView.vue (alertdialog con foco/Escape/retorno), src/__tests__/admin-retire.spec.ts, e2e/admin-retire.spec.ts
+- decision: "producto con movimientos" = presente en líneas de pedido servidas (el snapshot no expone endpoint de movimientos; lectura, no negocio nuevo); gate solo presentacional en vistas; categoría cuenta productos cargados; alertdialog inline con foco, Escape y retorno al disparador
+- blocker: none

@@ -84,6 +84,12 @@
 - El stub persiste el pedido por instancia (status/payment/cancel) para que la propagación admin→cliente sea observable en lecturas y tracking dentro de un mismo test; instancias frescas arrancan en pending y la suite de contrato sigue verde.
 - Filtro de pedidos por estado servido (`?status=`); usuarios listar/ver sin mutación (fuera de alcance v1).
 
+## 2026-09-27 — T013 confirmación en retiros con dependencias (complete)
+
+- "Producto con movimientos" = presente en líneas de pedido servidas (el snapshot no expone endpoint de movimientos; es lectura para el gate, no lógica de negocio nueva — el plan lo pedía así).
+- Gate puramente presentacional en las vistas: `countCategoryProducts` puro + `hasMovements` del store; sin dependencias el borrado sigue directo (T010 intacto, pineado por admin-catalog).
+- `alertdialog` inline con foco al abrir, Escape/cancelar aborta, confirmar retira y el foco retorna al disparador (misma clase de cuidado que el shell T011).
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.
