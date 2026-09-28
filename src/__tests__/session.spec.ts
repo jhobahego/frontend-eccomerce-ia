@@ -121,6 +121,31 @@ describe('session store (T003)', () => {
     expect(session.isAuthenticated).toBe(false)
   })
 
+  it('treats a rejected refresh token (422) as expired, never as a boot crash (branch review)', async () => {
+    window.localStorage.setItem('eia.refresh_token.v1', 'r-stale')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<(url: string) => Promise<Response>>(async (url) => {
+        if (url.endsWith('/api/v1/auth/refresh')) {
+          return jsonResponse(
+            {
+              detail: [
+                { loc: ['body', 'refresh_token'], msg: 'Invalid token', type: 'value_error' },
+              ],
+            },
+            422,
+          )
+        }
+        return jsonResponse(ME)
+      }),
+    )
+    const session = useSessionStore()
+    await expect(session.restore()).resolves.toBeUndefined()
+    expect(session.isAuthenticated).toBe(false)
+    expect(session.user).toBeNull()
+    expect(window.localStorage.getItem('eia.refresh_token.v1')).toBeNull()
+  })
+
   it('leaves no half-session when user load fails after login (review I2)', async () => {
     vi.stubGlobal(
       'fetch',

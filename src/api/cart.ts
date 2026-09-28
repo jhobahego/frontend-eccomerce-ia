@@ -115,8 +115,14 @@ export function clearOwnCart(): Promise<Cart> {
   return apiRequest<Cart>('/api/v1/cart/clear', { method: 'DELETE' })
 }
 
-export function mergeGuestCart(sessionId: string): Promise<Cart> {
-  return apiRequest<Cart>(`/api/v1/cart/merge/${encodeURIComponent(sessionId)}`, {
+/**
+ * Merges the session cart into the owned cart after login. The backend types
+ * `session_cart_id` as an integer cart id (review C1: sending the string
+ * session id answers 422) — callers resolve it through `fetchSessionCart`
+ * first. Requires the post-login Bearer.
+ */
+export function mergeGuestCart(cartId: number): Promise<Cart> {
+  return apiRequest<Cart>(`/api/v1/cart/merge/${cartId}`, {
     method: 'POST',
   })
 }

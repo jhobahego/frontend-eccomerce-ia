@@ -30,6 +30,12 @@ export interface ProductDetail extends Product {
 
 const PRICE_INPUT = /^\d+(\.\d{1,2})?$/
 
+/** Field-level check for price inputs (branch review): blank means "no filter". */
+export function isValidPriceInput(raw: string): boolean {
+  const trimmed = raw.trim()
+  return trimmed === '' || PRICE_INPUT.test(trimmed)
+}
+
 /**
  * Normalizes a user-typed price to the `NN.NN` shape the API prices in.
  * This is input encoding, not amount math: malformed input is dropped
@@ -126,6 +132,9 @@ export function filtersToRouteQuery(filters: ProductSearchFilters): Record<strin
   if (filters.sort !== undefined && filters.sort !== 'novelty') {
     out['sort'] = filters.sort
   }
+  if (filters.skip !== undefined && filters.skip > 0) {
+    out['skip'] = String(filters.skip)
+  }
   return out
 }
 
@@ -164,6 +173,13 @@ export function filtersFromRouteQuery(
   const sort = firstString(query['sort'])
   if (sort !== undefined && (SORTS as readonly string[]).includes(sort)) {
     filters.sort = sort as ProductSort
+  }
+  const skip = firstString(query['skip'])
+  if (skip !== undefined && skip !== '') {
+    const parsed = Number(skip)
+    if (Number.isInteger(parsed) && parsed > 0) {
+      filters.skip = parsed
+    }
   }
   return filters
 }

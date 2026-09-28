@@ -183,19 +183,37 @@ describe('cart mutations (T007)', () => {
   })
 })
 
-describe('merge on login (T007)', () => {
-  it('merges the guest cart once and drops the guest id', async () => {
+describe('merge on login (T007, review: integer cart id)', () => {
+  it('merges through the session cart integer id and drops the guest id', async () => {
     const seen: string[] = []
-    stubFetch((url) => {
-      seen.push(url)
+    stubFetch((url, init) => {
+      seen.push(`${init?.method ?? 'GET'} ${url}`)
       if (url.endsWith('/api/v1/auth/login')) {
         return jsonResponse({ access_token: 'a1', refresh_token: 'r1' })
       }
-      if (url.includes('/cart/merge/')) {
-        return jsonResponse(CART)
-      }
       if (url.endsWith('/api/v1/auth/me')) {
         return jsonResponse(ME)
+      }
+      if (url.endsWith('/api/v1/cart/session/sess-1')) {
+        return jsonResponse(CART)
+      }
+      // The snapshot types session_cart_id as integer: a UUID string here
+      // answers 422, exactly like the real backend would.
+      if (url.includes('/cart/merge/')) {
+        return url.endsWith('/cart/merge/3')
+          ? jsonResponse({ ...CART, user_id: 5, session_id: null })
+          : jsonResponse(
+              {
+                detail: [
+                  {
+                    loc: ['path', 'session_cart_id'],
+                    msg: 'Input should be a valid integer',
+                    type: 'int_parsing',
+                  },
+                ],
+              },
+              422,
+            )
       }
       return jsonResponse({ ...CART, user_id: 5, session_id: null })
     })
@@ -203,9 +221,35 @@ describe('merge on login (T007)', () => {
     await useSessionStore().login('ana', 's3cret')
     const cart = useCartStore()
     await cart.mergeOnLogin()
-    expect(seen.filter((url) => url.includes('/cart/merge/'))).toHaveLength(1)
+    expect(seen.filter((url) => url.includes('/cart/merge/3'))).toHaveLength(1)
+    expect(seen.some((url) => url.includes('/cart/merge/sess-1'))).toBe(false)
     expect(loadGuestSessionId()).toBeNull()
-    expect(cart.cart?.items).toHaveLength(1)
+    expect(cart.error).toBeNull()
+    expect(cart.cart?.user_id).toBe(5)
+  })
+
+  it('skips the merge gracefully when the session cart is gone', async () => {
+    const seen: string[] = []
+    stubFetch((url) => {
+      seen.push(url)
+      if (url.endsWith('/api/v1/auth/login')) {
+        return jsonResponse({ access_token: 'a1', refresh_token: 'r1' })
+      }
+      if (url.endsWith('/api/v1/auth/me')) {
+        return jsonResponse(ME)
+      }
+      if (url.includes('/api/v1/cart/session/')) {
+        return jsonResponse({ detail: 'Not found' }, 404)
+      }
+      return jsonResponse({ ...CART, user_id: 5, session_id: null })
+    })
+    saveGuestSessionId('sess-stale')
+    await useSessionStore().login('ana', 's3cret')
+    const cart = useCartStore()
+    await cart.mergeOnLogin()
+    expect(seen.some((url) => url.includes('/cart/merge/'))).toBe(false)
+    expect(loadGuestSessionId()).toBeNull()
+    expect(cart.error).toBeNull()
     expect(cart.cart?.user_id).toBe(5)
   })
 

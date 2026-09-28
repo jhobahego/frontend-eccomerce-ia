@@ -67,7 +67,7 @@ async function onSave(): Promise<void> {
     readProfile()
     saved.value = true
   } catch (error) {
-    errorMessage.value = isApiError(error) ? error.message : 'Unexpected error'
+    errorMessage.value = isApiError(error) ? error.message : 'Ha ocurrido un error inesperado.'
   } finally {
     saving.value = false
   }
@@ -91,8 +91,18 @@ onMounted(readProfile)
           name="first-name"
           autocomplete="given-name"
           required
+          :aria-invalid="fieldErrors['first_name'] !== undefined"
+          :aria-describedby="
+            fieldErrors['first_name'] !== undefined ? 'account-first-name-error' : undefined
+          "
         />
-        <p v-if="fieldErrors['first_name'] !== undefined">{{ fieldErrors['first_name'] }}</p>
+        <p
+          v-if="fieldErrors['first_name'] !== undefined"
+          id="account-first-name-error"
+          role="alert"
+        >
+          {{ fieldErrors['first_name'] }}
+        </p>
       </div>
       <div>
         <label for="account-last-name">Apellidos</label>
@@ -103,8 +113,14 @@ onMounted(readProfile)
           name="last-name"
           autocomplete="family-name"
           required
+          :aria-invalid="fieldErrors['last_name'] !== undefined"
+          :aria-describedby="
+            fieldErrors['last_name'] !== undefined ? 'account-last-name-error' : undefined
+          "
         />
-        <p v-if="fieldErrors['last_name'] !== undefined">{{ fieldErrors['last_name'] }}</p>
+        <p v-if="fieldErrors['last_name'] !== undefined" id="account-last-name-error" role="alert">
+          {{ fieldErrors['last_name'] }}
+        </p>
       </div>
       <div>
         <label for="account-phone">Teléfono</label>

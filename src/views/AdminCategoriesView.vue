@@ -138,13 +138,43 @@ onMounted(() => {
         <form @submit.prevent="create">
           <div>
             <label for="admin-category-name">Nombre de la categoría</label>
-            <input id="admin-category-name" v-model="name" type="text" required />
-            <p v-if="createErrors['name'] !== undefined">{{ createErrors['name'] }}</p>
+            <input
+              id="admin-category-name"
+              v-model="name"
+              type="text"
+              required
+              :aria-invalid="createErrors['name'] !== undefined"
+              :aria-describedby="
+                createErrors['name'] !== undefined ? 'admin-category-name-error' : undefined
+              "
+            />
+            <p
+              v-if="createErrors['name'] !== undefined"
+              id="admin-category-name-error"
+              role="alert"
+            >
+              {{ createErrors['name'] }}
+            </p>
           </div>
           <div>
             <label for="admin-category-slug">Slug</label>
-            <input id="admin-category-slug" v-model="slug" type="text" required />
-            <p v-if="createErrors['slug'] !== undefined">{{ createErrors['slug'] }}</p>
+            <input
+              id="admin-category-slug"
+              v-model="slug"
+              type="text"
+              required
+              :aria-invalid="createErrors['slug'] !== undefined"
+              :aria-describedby="
+                createErrors['slug'] !== undefined ? 'admin-category-slug-error' : undefined
+              "
+            />
+            <p
+              v-if="createErrors['slug'] !== undefined"
+              id="admin-category-slug-error"
+              role="alert"
+            >
+              {{ createErrors['slug'] }}
+            </p>
           </div>
           <div>
             <label for="admin-category-description">Descripción</label>
@@ -196,8 +226,16 @@ onMounted(() => {
           </div>
           <form v-if="editingId === node.id" @submit.prevent="saveEdit(node.id)">
             <label :for="`edit-category-name-${node.id}`">Nombre</label>
-            <input :id="`edit-category-name-${node.id}`" v-model="editName" type="text" />
-            <p v-if="editError !== null">{{ editError }}</p>
+            <input
+              :id="`edit-category-name-${node.id}`"
+              v-model="editName"
+              type="text"
+              :aria-invalid="editError !== null"
+              :aria-describedby="editError !== null ? `edit-category-error-${node.id}` : undefined"
+            />
+            <p v-if="editError !== null" :id="`edit-category-error-${node.id}`" role="alert">
+              {{ editError }}
+            </p>
             <button type="submit">Guardar</button>
           </form>
         </li>

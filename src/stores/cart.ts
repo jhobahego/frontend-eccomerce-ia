@@ -16,7 +16,7 @@ import {
   validateCart,
   type CartValidation,
 } from '../api/cart'
-import { normalizeError } from '../api/errors'
+import { normalizeError, isApiError } from '../api/errors'
 import type { ApiError, Cart, CartSummary } from '../api/types'
 
 import { useSessionStore } from './session'
@@ -144,6 +144,10 @@ export const useCartStore = defineStore('cart', () => {
    * id it is a plain reload of the owned cart; afterwards the guest id is
    * dropped so a later login never re-merges. Never throws: failures land in
    * `error` and must not block the post-login navigation.
+   *
+   * Review C1: merge takes the integer cart id, not the string session id —
+   * the session cart is resolved first. A vanished session cart (stale id) is
+   * not an error: there is nothing left to merge, so it reloads owned.
    */
   async function mergeOnLogin(): Promise<void> {
     const guestId = loadGuestSessionId()
@@ -154,7 +158,18 @@ export const useCartStore = defineStore('cart', () => {
     loading.value = true
     error.value = null
     try {
-      cart.value = await mergeGuestCart(guestId)
+      let merged: Cart | null = null
+      try {
+        const sessionCart = await fetchSessionCart(guestId)
+        merged = await mergeGuestCart(sessionCart.id)
+      } catch (unknown) {
+        if (!(isApiError(unknown) && unknown.code === 'NOT_FOUND')) {
+          throw unknown
+        }
+      }
+      if (merged !== null) {
+        cart.value = merged
+      }
       clearGuestSessionId()
       await loadCart()
     } catch (unknown) {

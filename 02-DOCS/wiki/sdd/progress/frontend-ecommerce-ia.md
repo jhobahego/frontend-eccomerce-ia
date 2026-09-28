@@ -172,3 +172,14 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: formato en 15 ficheros (solo estilo), src/__tests__/storefront-views.spec.ts (helpers tipados), e2e/a11y.spec.ts (6 tests granulares sin warnings)
 - decision: T015 como red de cierre funciona — cazó deriva de formato acumulada y un latente de tipos que las tareas no vieron por orden de verificación; el gate que faltaba era `prettier --check` en cada tarea, no solo en verify
 - blocker: none
+
+## branch-review — 2026-09-27
+- status: complete (folded)
+- reviewer: 3 pasadas fresh-eyes en paralelo (api/sesión/stub · storefront · admin/shell/puertas) → 2 Critical, 10 Important, 8 Minor
+- folded now: C1 merge por id entero de cesta (el UUID string daría 422 real; prefetch + tolerancia a sesión rancia) + I1 restore 422→expirada (nunca crash en boot) + I3 errores UNKNOWN genéricos en español (incl. fallbacks de vistas) + I1/I4 anuncios de error junto al campo (role=alert + aria en checkout/cuenta/admin) + I2 texto explícito cuando ya no se puede cancelar + I2/I3 precios validados en vista + paginación sincronizada a URL (?skip) + I1-admin retire fail-closed (movementsLoaded; sin movimientos conocidos se pregunta igual)
+- accepted with owner: C2 ediciones de invitado exigen Bearer según snapshot sin alternativa con sesión en el contrato — el stub sirve anónimo por spec y queda pineado como divergencia documentada (dueño: smoke contra backend vivo); I2-admin formularios con todos los campos de la spec (dueño: follow-up post-ship, decisión explícita del usuario)
+- downgraded with evidence: I3-devtools (cero strings en dist: solo cromo dev, presupuestos intactos) → minor diferido; minors restantes → diferidos
+- triangulation: e2e 39/39 tras el fold (merge entero incluido); lección de harness: esperar texto presente ya en el render inicial resuelve antes de cargar — esperar siempre contenido post-carga
+- files: src/api/{cart,errors,catalog}.ts, src/stores/{cart,session,admin}.ts, src/views/{Catalog,Checkout,Account,AdminCategories,AdminProducts,OrderDetail}View.vue, src/views/{Login,Register}View.vue + stores/orders.ts (cadenas ES), src/mocks/stubBackend.ts (C1+C2), 6 specs (15 tests nuevos)
+- totals: `159 unit + 39 e2e`, tipos + oxlint + eslint cero warnings + prettier + build (gzip 54.45 KB) + audit limpio
+- blocker: none

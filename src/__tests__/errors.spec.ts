@@ -49,8 +49,22 @@ describe('error envelope (T002)', () => {
   it('passes ApiError values through and falls back for the unknown', () => {
     const apiError = { code: 'NOT_FOUND', message: 'Missing' }
     expect(normalizeError(apiError)).toBe(apiError)
-    expect(normalizeError(new Error('boom'))).toEqual({ code: 'UNKNOWN', message: 'boom' })
-    expect(normalizeError(null)).toEqual({ code: 'UNKNOWN', message: 'Unexpected error' })
+    expect(normalizeError(new Error('boom'))).toEqual({
+      code: 'UNKNOWN',
+      message: 'Ha ocurrido un error inesperado.',
+    })
+    expect(normalizeError(null)).toEqual({
+      code: 'UNKNOWN',
+      message: 'Ha ocurrido un error inesperado.',
+    })
     expect(isApiError({ code: 'X' })).toBe(false)
+  })
+
+  it('never leaks raw technical messages for unknown failures (branch review)', () => {
+    for (const input of [new Error('boom'), new Error(''), null, undefined, 42]) {
+      const result = normalizeError(input)
+      expect(result.code).toBe('UNKNOWN')
+      expect(result.message).toBe('Ha ocurrido un error inesperado.')
+    }
   })
 })

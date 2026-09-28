@@ -771,6 +771,12 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         }
       }
 
+      // Branch-review C2 divergence (documented, not drift): the snapshot
+      // demands Bearer on line update/remove/clear/validate, but the spec
+      // requires guests to edit their carts — no client workaround exists
+      // (there are no session-scoped variants of those endpoints). The stub
+      // therefore serves them anonymously per spec; a live-backend smoke must
+      // confirm whether the real backend enforces auth there.
       case 'PUT /api/v1/cart/items/{item_id}': {
         const body = parseBody(request.bodyText)
         const quantity = typeof body['quantity'] === 'number' ? body['quantity'] : 1
@@ -821,6 +827,9 @@ export function createStubBackend(options: StubBackendOptions = {}): {
       }
 
       case 'POST /api/v1/cart/merge/{session_cart_id}': {
+        // The snapshot types the param as an integer cart id (review C1);
+        // the client resolves the string session id first, so by the time
+        // this runs the segment is numeric — still served, still stateless.
         return { status: 200, body: servedCart() }
       }
 

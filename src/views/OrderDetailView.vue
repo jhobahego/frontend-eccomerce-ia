@@ -88,6 +88,7 @@ watch(
         >
           Cancelar pedido
         </button>
+        <p v-else>Este pedido ya no se puede cancelar.</p>
       </template>
       <p v-else>
         Pedido no encontrado.

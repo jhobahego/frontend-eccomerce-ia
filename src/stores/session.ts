@@ -75,9 +75,12 @@ export const useSessionStore = defineStore('session', () => {
         auth: false,
       })
     } catch (error) {
+      // A rejected refresh token (401 expired/unknown, 422 malformed per the
+      // snapshot) is unrecoverable client-side: clear and re-login. Anything
+      // else (notably NETWORK) propagates to the caller, which decides.
       if (
         error instanceof SessionExpiredError ||
-        (isApiError(error) && error.code === 'UNAUTHORIZED')
+        (isApiError(error) && (error.code === 'UNAUTHORIZED' || error.code === 'VALIDATION'))
       ) {
         clearSession()
         throw new SessionExpiredError()

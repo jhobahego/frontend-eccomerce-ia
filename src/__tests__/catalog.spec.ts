@@ -1,14 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 
 import {
   buildProductSearchParams,
   filtersFromRouteQuery,
   filtersToRouteQuery,
+  isValidPriceInput,
   normalizePriceInput,
   type ProductSearchFilters,
 } from '../api/catalog'
 import { useCatalogStore } from '../stores/catalog'
+import CatalogView from '../views/CatalogView.vue'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -135,6 +139,23 @@ describe('catalog query contracts (T006)', () => {
     const back = filtersFromRouteQuery(filtersToRouteQuery(filters))
     expect(back).toEqual(filters)
   })
+
+  it('validates user-typed prices for field messages (branch review)', () => {
+    expect(isValidPriceInput('')).toBe(true)
+    expect(isValidPriceInput('  ')).toBe(true)
+    expect(isValidPriceInput('10')).toBe(true)
+    expect(isValidPriceInput('19.99')).toBe(true)
+    expect(isValidPriceInput('barato')).toBe(false)
+    expect(isValidPriceInput('10.999')).toBe(false)
+  })
+
+  it('carries a nonzero skip window through the route query (branch review)', () => {
+    expect(filtersToRouteQuery({ skip: 0, limit: 12 })).not.toHaveProperty('skip')
+    expect(filtersToRouteQuery({ skip: 12, limit: 12 })).toMatchObject({ skip: '12' })
+    expect(filtersFromRouteQuery({ skip: '12' }).skip).toBe(12)
+    expect(filtersFromRouteQuery({ skip: 'muchos' }).skip).toBeUndefined()
+    expect(filtersFromRouteQuery({}).skip).toBeUndefined()
+  })
 })
 
 describe('catalog store (T006)', () => {
@@ -244,5 +265,80 @@ describe('catalog store (T006)', () => {
     expect(catalog.category?.name).toBe('Cocina')
     expect(catalog.subcategories.map((node) => node.name)).toEqual(['Teteras'])
     expect(catalog.categoryProducts).toHaveLength(1)
+  })
+})
+
+describe('catalog paging through the URL (branch review)', () => {
+  function pageOf(id: number): Record<string, unknown> {
+    return { ...PRODUCT, id, name: `Producto ${id}`, slug: `producto-${id}` }
+  }
+
+  async function mountCatalog(initialQuery: Record<string, string> = {}): Promise<{
+    wrapper: ReturnType<typeof mount>
+    router: ReturnType<typeof createRouter>
+  }> {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/catalogo', name: 'catalog', component: { template: '<div />' } }],
+    })
+    // Navigate before mounting: the view reads its initial window from the
+    // route exactly once, in onMounted.
+    await router.replace({ path: '/catalogo', query: initialQuery })
+    const wrapper = mount(CatalogView, {
+      global: {
+        plugins: [pinia, router],
+        stubs: { RouterLink: { template: '<a><slot /></a>' } },
+      },
+    })
+    return { wrapper, router }
+  }
+
+  it('syncs the page window back to the URL when turning pages', async () => {
+    const seen: string[] = []
+    stubFetch((url) => {
+      seen.push(url)
+      if (url.includes('/api/v1/categories/')) {
+        return jsonResponse([])
+      }
+      return jsonResponse(Array.from({ length: 13 }, (_, index) => pageOf(index + 1)))
+    })
+    const { wrapper, router } = await mountCatalog()
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('Producto 1')
+      },
+      { timeout: 3000 },
+    )
+    const next = wrapper.findAll('button').find((button) => button.text().trim() === 'Siguiente')
+    expect(next?.attributes('disabled')).toBeUndefined()
+    await next?.trigger('click')
+    await vi.waitFor(
+      () => {
+        expect(router.currentRoute.value.query['skip']).toBe('12')
+      },
+      { timeout: 3000 },
+    )
+    expect(seen.some((url) => url.includes('skip=12'))).toBe(true)
+  })
+
+  it('resumes the served window from a shared skip URL', async () => {
+    const seen: string[] = []
+    stubFetch((url) => {
+      seen.push(url)
+      if (url.includes('/api/v1/categories/')) {
+        return jsonResponse([])
+      }
+      return jsonResponse([pageOf(13)])
+    })
+    const { wrapper } = await mountCatalog({ skip: '12' })
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('Producto 13')
+      },
+      { timeout: 3000 },
+    )
+    expect(seen.some((url) => url.includes('skip=12'))).toBe(true)
   })
 })

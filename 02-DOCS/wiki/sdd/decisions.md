@@ -103,6 +103,13 @@
 - T015 cazó lo que las tareas no vieron: deriva de formato en 15 ficheros y un error de tipos latente de T014. Lección: `prettier --check` debe correr por tarea, no solo en verify.
 - Matriz firefox/webkit imposible en esta distro (bundles sin soporte) → CI-owned en ship; a11y dividido en tests pequeños para no rozar timeouts bajo carga.
 
+## 2026-09-27 — branch review (folded)
+
+- C1: el merge envía el id entero de la cesta (prefetch de la cesta de sesión); el string de sesión daría 422 real. Sesión rancia → se omite el merge sin bloquear el login.
+- C2 (divergencia documentada, no deriva): el snapshot exige Bearer en líneas/validar/vaciar sin variantes de sesión; la spec exige invitado editable sin workaround posible → el stub sirve anónimo y queda pineado; dueño: smoke vivo.
+- Admin con todos los campos de la spec diferido con dueño (follow-up post-ship, decisión explícita del usuario); retiros fail-closed y errores anunciados sí plegados.
+- Lección de harness: en mounts, esperar contenido post-carga (el render inicial muestra secciones vacías y resuelve antes de tiempo).
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

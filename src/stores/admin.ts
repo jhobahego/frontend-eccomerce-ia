@@ -54,6 +54,7 @@ export const useAdminStore = defineStore('admin', () => {
   const selectedUser = ref<User | null>(null)
   const usersLoading = ref(false)
   const orderProductIds = ref<number[]>([])
+  const movementsLoaded = ref(false)
 
   function fail(unknown: unknown): void {
     error.value = normalizeError(unknown)
@@ -209,6 +210,7 @@ export const useAdminStore = defineStore('admin', () => {
    */
   async function loadOrderMovements(): Promise<void> {
     error.value = null
+    movementsLoaded.value = false
     try {
       const summaries = await fetchAllOrders()
       const details = await Promise.all(summaries.map((entry) => fetchOrder(entry.id)))
@@ -225,6 +227,8 @@ export const useAdminStore = defineStore('admin', () => {
       orderProductIds.value = ids
     } catch (unknown) {
       fail(unknown)
+    } finally {
+      movementsLoaded.value = true
     }
   }
 
@@ -250,6 +254,7 @@ export const useAdminStore = defineStore('admin', () => {
     selectedUser,
     usersLoading,
     orderProductIds,
+    movementsLoaded,
     loadOrders,
     setOrderStatus,
     setOrderPayment,

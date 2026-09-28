@@ -97,10 +97,9 @@ export function normalizeError(input: unknown): ApiError {
     return { code: codeFor(input), message: input }
   }
   if (input instanceof Error) {
-    return {
-      code: 'UNKNOWN',
-      message: input.message === '' ? 'Unexpected error' : input.message,
-    }
+    // Never leak raw technical messages (principle 8): unexpected failures
+    // get a generic Spanish message; codes stay machine-readable.
+    return { code: 'UNKNOWN', message: 'Ha ocurrido un error inesperado.' }
   }
   if (isRecord(input) && 'detail' in input) {
     const detail = input['detail']
@@ -117,5 +116,5 @@ export function normalizeError(input: unknown): ApiError {
         : { code: 'VALIDATION', message, field }
     }
   }
-  return { code: 'UNKNOWN', message: 'Unexpected error' }
+  return { code: 'UNKNOWN', message: 'Ha ocurrido un error inesperado.' }
 }

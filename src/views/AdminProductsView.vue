@@ -92,6 +92,14 @@ function movementCount(id: number): number {
   return admin.orderProductIds.filter((entry) => entry === id).length
 }
 
+function retireDescription(id: number): string {
+  if (!admin.movementsLoaded) {
+    return 'Todavía no se ha comprobado si aparece en pedidos. '
+  }
+  const count = movementCount(id)
+  return count === 1 ? 'Aparece en 1 pedido. ' : `Aparece en ${count} pedidos. `
+}
+
 function focusDialog(): void {
   void nextTick(() => {
     document.getElementById('retire-product-dialog')?.focus()
@@ -105,11 +113,13 @@ function focusTrigger(): void {
 }
 
 /**
- * Retire gate (T013): products with order movements ask explicitly; the rest
+ * Retire gate (T013, branch review fail-closed): products with order movements
+ * ask explicitly, and so do products whose movements have not loaded yet — a
+ * fast click before the check resolves must never delete silently. The rest
  * keep the direct removal from T010. No business logic here — just the gate.
  */
 function askRemove(id: number): void {
-  if (!admin.hasMovements(id)) {
+  if (admin.movementsLoaded && !admin.hasMovements(id)) {
     remove(id)
     return
   }
@@ -197,18 +207,51 @@ onMounted(() => {
         <form @submit.prevent="create">
           <div>
             <label for="admin-product-name">Nombre del producto</label>
-            <input id="admin-product-name" v-model="name" type="text" required />
-            <p v-if="createErrors['name'] !== undefined">{{ createErrors['name'] }}</p>
+            <input
+              id="admin-product-name"
+              v-model="name"
+              type="text"
+              required
+              :aria-invalid="createErrors['name'] !== undefined"
+              :aria-describedby="
+                createErrors['name'] !== undefined ? 'admin-product-name-error' : undefined
+              "
+            />
+            <p v-if="createErrors['name'] !== undefined" id="admin-product-name-error" role="alert">
+              {{ createErrors['name'] }}
+            </p>
           </div>
           <div>
             <label for="admin-product-slug">Slug del producto</label>
-            <input id="admin-product-slug" v-model="slug" type="text" required />
-            <p v-if="createErrors['slug'] !== undefined">{{ createErrors['slug'] }}</p>
+            <input
+              id="admin-product-slug"
+              v-model="slug"
+              type="text"
+              required
+              :aria-invalid="createErrors['slug'] !== undefined"
+              :aria-describedby="
+                createErrors['slug'] !== undefined ? 'admin-product-slug-error' : undefined
+              "
+            />
+            <p v-if="createErrors['slug'] !== undefined" id="admin-product-slug-error" role="alert">
+              {{ createErrors['slug'] }}
+            </p>
           </div>
           <div>
             <label for="admin-product-sku">Referencia</label>
-            <input id="admin-product-sku" v-model="sku" type="text" required />
-            <p v-if="createErrors['sku'] !== undefined">{{ createErrors['sku'] }}</p>
+            <input
+              id="admin-product-sku"
+              v-model="sku"
+              type="text"
+              required
+              :aria-invalid="createErrors['sku'] !== undefined"
+              :aria-describedby="
+                createErrors['sku'] !== undefined ? 'admin-product-sku-error' : undefined
+              "
+            />
+            <p v-if="createErrors['sku'] !== undefined" id="admin-product-sku-error" role="alert">
+              {{ createErrors['sku'] }}
+            </p>
           </div>
           <div>
             <label for="admin-product-price">Precio</label>
@@ -218,18 +261,42 @@ onMounted(() => {
               type="text"
               inputmode="decimal"
               required
+              :aria-invalid="createErrors['price'] !== undefined"
+              :aria-describedby="
+                createErrors['price'] !== undefined ? 'admin-product-price-error' : undefined
+              "
             />
-            <p v-if="createErrors['price'] !== undefined">{{ createErrors['price'] }}</p>
+            <p
+              v-if="createErrors['price'] !== undefined"
+              id="admin-product-price-error"
+              role="alert"
+            >
+              {{ createErrors['price'] }}
+            </p>
           </div>
           <div>
             <label for="admin-product-category">Categoría</label>
-            <select id="admin-product-category" v-model="categoryId" required>
+            <select
+              id="admin-product-category"
+              v-model="categoryId"
+              required
+              :aria-invalid="createErrors['category'] !== undefined"
+              :aria-describedby="
+                createErrors['category'] !== undefined ? 'admin-product-category-error' : undefined
+              "
+            >
               <option value="">Elige</option>
               <option v-for="node in admin.categories" :key="node.id" :value="String(node.id)">
                 {{ node.name }}
               </option>
             </select>
-            <p v-if="createErrors['category'] !== undefined">{{ createErrors['category'] }}</p>
+            <p
+              v-if="createErrors['category'] !== undefined"
+              id="admin-product-category-error"
+              role="alert"
+            >
+              {{ createErrors['category'] }}
+            </p>
           </div>
           <div>
             <label for="admin-product-stock">Stock inicial</label>
@@ -276,11 +343,7 @@ onMounted(() => {
           >
             <h3 :id="`retire-product-heading-${item.id}`">Eliminar {{ item.name }}</h3>
             <p :id="`retire-product-desc-${item.id}`">
-              {{
-                movementCount(item.id) === 1
-                  ? 'Aparece en 1 pedido. '
-                  : `Aparece en ${movementCount(item.id)} pedidos. `
-              }}Esta acción no se puede deshacer.
+              {{ retireDescription(item.id) }}Esta acción no se puede deshacer.
             </p>
             <button type="button" @click="confirmRemove()">
               Confirmar eliminación de {{ item.name }}

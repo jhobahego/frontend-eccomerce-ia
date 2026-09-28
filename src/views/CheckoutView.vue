@@ -101,8 +101,18 @@ onMounted(() => {
               name="shipping-address"
               autocomplete="street-address"
               required
+              :aria-invalid="orders.fieldErrors['shipping_address'] !== undefined"
+              :aria-describedby="
+                orders.fieldErrors['shipping_address'] !== undefined
+                  ? 'checkout-address-error'
+                  : undefined
+              "
             />
-            <p v-if="orders.fieldErrors['shipping_address'] !== undefined">
+            <p
+              v-if="orders.fieldErrors['shipping_address'] !== undefined"
+              id="checkout-address-error"
+              role="alert"
+            >
               {{ orders.fieldErrors['shipping_address'] }}
             </p>
           </div>
@@ -115,8 +125,18 @@ onMounted(() => {
               name="shipping-city"
               autocomplete="address-level2"
               required
+              :aria-invalid="orders.fieldErrors['shipping_city'] !== undefined"
+              :aria-describedby="
+                orders.fieldErrors['shipping_city'] !== undefined
+                  ? 'checkout-city-error'
+                  : undefined
+              "
             />
-            <p v-if="orders.fieldErrors['shipping_city'] !== undefined">
+            <p
+              v-if="orders.fieldErrors['shipping_city'] !== undefined"
+              id="checkout-city-error"
+              role="alert"
+            >
               {{ orders.fieldErrors['shipping_city'] }}
             </p>
           </div>
@@ -129,8 +149,18 @@ onMounted(() => {
               name="shipping-country"
               autocomplete="country-name"
               required
+              :aria-invalid="orders.fieldErrors['shipping_country'] !== undefined"
+              :aria-describedby="
+                orders.fieldErrors['shipping_country'] !== undefined
+                  ? 'checkout-country-error'
+                  : undefined
+              "
             />
-            <p v-if="orders.fieldErrors['shipping_country'] !== undefined">
+            <p
+              v-if="orders.fieldErrors['shipping_country'] !== undefined"
+              id="checkout-country-error"
+              role="alert"
+            >
               {{ orders.fieldErrors['shipping_country'] }}
             </p>
           </div>
@@ -143,8 +173,18 @@ onMounted(() => {
               name="shipping-postal"
               autocomplete="postal-code"
               required
+              :aria-invalid="orders.fieldErrors['shipping_postal_code'] !== undefined"
+              :aria-describedby="
+                orders.fieldErrors['shipping_postal_code'] !== undefined
+                  ? 'checkout-postal-error'
+                  : undefined
+              "
             />
-            <p v-if="orders.fieldErrors['shipping_postal_code'] !== undefined">
+            <p
+              v-if="orders.fieldErrors['shipping_postal_code'] !== undefined"
+              id="checkout-postal-error"
+              role="alert"
+            >
               {{ orders.fieldErrors['shipping_postal_code'] }}
             </p>
           </div>

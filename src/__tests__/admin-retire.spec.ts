@@ -99,7 +99,9 @@ const ORDER_DETAIL = {
   items: [{ product_id: 1, quantity: 2, unit_price: '19.99', total_price: '39.98' }],
 }
 
-function stubFetch(handler: (url: string, init?: RequestInit) => Response): void {
+function stubFetch(
+  handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
+): void {
   vi.stubGlobal(
     'fetch',
     vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async (url, init) =>
@@ -273,5 +275,53 @@ describe('product retire confirmation (T013)', () => {
     await findButton(wrapper, 'Eliminar Taza')?.trigger('click')
     expect(wrapper.find('[role="alertdialog"]').exists()).toBe(false)
     expect(seen).toContain('DELETE http://test/api/v1/products/6')
+  })
+
+  it('fails closed while movements are still loading (branch review)', async () => {
+    await loginAsAdmin()
+    const seen: string[] = []
+    let releaseOrders!: (response: Response) => void
+    stubFetch((url, init) => {
+      const method = init?.method ?? 'GET'
+      seen.push(`${method} ${url}`)
+      if (method !== 'GET') {
+        return jsonResponse({})
+      }
+      if (url.includes('/api/v1/orders/all')) {
+        return new Promise<Response>((resolve) => {
+          releaseOrders = resolve
+        })
+      }
+      if (url.endsWith('/api/v1/orders/9')) {
+        return jsonResponse(ORDER_DETAIL)
+      }
+      if (url.includes('/products/low-stock')) {
+        return jsonResponse([])
+      }
+      if (url.includes('/api/v1/products')) {
+        return jsonResponse([TETERA, TAZA])
+      }
+      return jsonResponse([COCINA, HOGAR])
+    })
+    const wrapper = mount(AdminProductsView)
+    // The catalog list paints while movements stay pending: a fast click on a
+    // product without known movements must still ask explicitly.
+    await vi.waitFor(
+      () => {
+        expect(wrapper.text()).toContain('Taza')
+      },
+      { timeout: 3000 },
+    )
+    expect(useAdminStore().movementsLoaded).toBe(false)
+
+    await findButton(wrapper, 'Eliminar Taza')?.trigger('click')
+    expect(wrapper.find('[role="alertdialog"]').exists()).toBe(true)
+    expect(wrapper.text()).toMatch(/todavía no se ha comprobado/i)
+    expect(seen.some((call) => call.startsWith('DELETE'))).toBe(false)
+
+    releaseOrders(jsonResponse([ORDER_SUMMARY]))
+    await vi.waitFor(() => {
+      expect(useAdminStore().movementsLoaded).toBe(true)
+    })
   })
 })

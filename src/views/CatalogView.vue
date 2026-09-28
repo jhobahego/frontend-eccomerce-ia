@@ -6,6 +6,7 @@ import {
   CATALOG_PAGE_SIZE,
   filtersFromRouteQuery,
   filtersToRouteQuery,
+  isValidPriceInput,
   type ProductSearchFilters,
   type ProductSort,
 } from '../api/catalog'
@@ -23,6 +24,7 @@ const maxPrice = ref('')
 const onlyFeatured = ref(false)
 const onlyInStock = ref(false)
 const sort = ref<ProductSort>('novelty')
+const priceErrors = ref<Record<string, string>>({})
 
 function readFilters(): ProductSearchFilters {
   const parsed = filtersFromRouteQuery(
@@ -73,6 +75,19 @@ function hasActiveFilters(): boolean {
 }
 
 async function applySearch(): Promise<void> {
+  // Malformed prices never reach the server silently (branch review): they
+  // stay next to their field until fixed, and no search fires meanwhile.
+  const invalid: Record<string, string> = {}
+  if (!isValidPriceInput(minPrice.value)) {
+    invalid['min'] = 'Precio con hasta dos decimales.'
+  }
+  if (!isValidPriceInput(maxPrice.value)) {
+    invalid['max'] = 'Precio con hasta dos decimales.'
+  }
+  priceErrors.value = invalid
+  if (Object.keys(invalid).length > 0) {
+    return
+  }
   const filters = currentFilters(0)
   await router.replace({ name: 'catalog', query: filtersToRouteQuery(filters) })
   await catalog.search(filters)
@@ -91,11 +106,20 @@ async function clearFilters(): Promise<void> {
 }
 
 async function previousPage(): Promise<void> {
-  await catalog.turnPage(-1)
+  await turnTo(-1)
 }
 
 async function nextPage(): Promise<void> {
-  await catalog.turnPage(1)
+  await turnTo(1)
+}
+
+/** Paging moves the served window and syncs it back to the URL (branch review). */
+async function turnTo(direction: 1 | -1): Promise<void> {
+  await catalog.turnPage(direction)
+  await router.replace({
+    name: 'catalog',
+    query: filtersToRouteQuery(currentFilters(catalog.page.skip)),
+  })
 }
 
 function retry(): void {
@@ -104,9 +128,9 @@ function retry(): void {
 
 onMounted(() => {
   void (async () => {
-    readFilters()
+    const parsed = readFilters()
     await catalog.ensureFilterCategories()
-    await catalog.search(currentFilters(0))
+    await catalog.search(currentFilters(parsed.skip ?? 0))
   })()
 })
 </script>
@@ -130,11 +154,33 @@ onMounted(() => {
       </div>
       <div>
         <label for="catalog-min">Precio mínimo</label>
-        <input id="catalog-min" v-model="minPrice" type="text" name="min" inputmode="decimal" />
+        <input
+          id="catalog-min"
+          v-model="minPrice"
+          type="text"
+          name="min"
+          inputmode="decimal"
+          :aria-invalid="priceErrors['min'] !== undefined"
+          :aria-describedby="priceErrors['min'] !== undefined ? 'catalog-min-error' : undefined"
+        />
+        <p v-if="priceErrors['min'] !== undefined" id="catalog-min-error" role="alert">
+          {{ priceErrors['min'] }}
+        </p>
       </div>
       <div>
         <label for="catalog-max">Precio máximo</label>
-        <input id="catalog-max" v-model="maxPrice" type="text" name="max" inputmode="decimal" />
+        <input
+          id="catalog-max"
+          v-model="maxPrice"
+          type="text"
+          name="max"
+          inputmode="decimal"
+          :aria-invalid="priceErrors['max'] !== undefined"
+          :aria-describedby="priceErrors['max'] !== undefined ? 'catalog-max-error' : undefined"
+        />
+        <p v-if="priceErrors['max'] !== undefined" id="catalog-max-error" role="alert">
+          {{ priceErrors['max'] }}
+        </p>
       </div>
       <div>
         <input id="catalog-featured" v-model="onlyFeatured" type="checkbox" />

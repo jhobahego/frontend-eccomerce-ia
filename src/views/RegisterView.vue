@@ -52,7 +52,7 @@ async function onSubmit(): Promise<void> {
       // identity fields so the message sits next to a plausible culprit.
       errorField.value = error.field ?? (error.code === 'CONFLICT' ? 'email' : null)
     } else {
-      errorMessage.value = 'Unexpected error'
+      errorMessage.value = 'Ha ocurrido un error inesperado.'
     }
   } finally {
     loading.value = false

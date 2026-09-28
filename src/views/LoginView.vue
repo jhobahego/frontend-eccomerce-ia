@@ -34,7 +34,7 @@ async function onSubmit(): Promise<void> {
     if (error instanceof SessionExpiredError) {
       errorMessage.value = 'Tu sesión caducó. Entra de nuevo.'
     } else {
-      errorMessage.value = isApiError(error) ? error.message : 'Unexpected error'
+      errorMessage.value = isApiError(error) ? error.message : 'Ha ocurrido un error inesperado.'
     }
   } finally {
     loading.value = false

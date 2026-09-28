@@ -66,7 +66,7 @@ export const useOrdersStore = defineStore('orders', () => {
         return null
       }
       if (availability === null) {
-        error.value = cart.error ?? { code: 'REQUEST', message: 'Unexpected error' }
+        error.value = cart.error ?? { code: 'REQUEST', message: 'Ha ocurrido un error inesperado.' }
         return null
       }
       const placed = await createOrder(buildOrderCreate(current, form))
