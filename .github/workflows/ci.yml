@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
 
+# Vite inlines env at build time and the app refuses to guess the API base
+# (constitution §5, principle 12; getApiBaseUrl throws without it). Locally it
+# comes from the gitignored .env; in CI it must be provided explicitly. Any
+# http(s) origin works for e2e: the transport stub intercepts **/api/v1/**.
+env:
+  VITE_API_URL: http://localhost:8000
+
 jobs:
   gates:
     runs-on: ubuntu-latest
