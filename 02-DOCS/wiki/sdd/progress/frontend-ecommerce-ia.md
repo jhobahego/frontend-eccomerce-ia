@@ -183,3 +183,11 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: src/api/{cart,errors,catalog}.ts, src/stores/{cart,session,admin}.ts, src/views/{Catalog,Checkout,Account,AdminCategories,AdminProducts,OrderDetail}View.vue, src/views/{Login,Register}View.vue + stores/orders.ts (cadenas ES), src/mocks/stubBackend.ts (C1+C2), 6 specs (15 tests nuevos)
 - totals: `159 unit + 39 e2e`, tipos + oxlint + eslint cero warnings + prettier + build (gzip 54.45 KB) + audit limpio
 - blocker: none
+
+## ship — 2026-09-27
+- status: complete
+- branch `feat/frontend-ecommerce-ia` pushed to origin; PR hacia `main` (merge vía PR, principio 10)
+- ci: `.github/workflows/ci.yml` nuevo — puertas (tipos, oxlint, eslint, prettier, vitest+coverage, build) + matriz chromium/firefox/webkit en preview, que solo corre en CI (bundles sin soporte en local)
+- evidence: 159 unit (cobertura 80.43%, gate lines 80) + 39 e2e chromium en local; audit sin high/critical
+- owners abiertos: smoke contra backend vivo (C2: auth en ediciones de invitado) + formularios admin con todos los campos (follow-up post-ship)
+- blocker: none
