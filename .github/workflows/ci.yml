@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm type-check
+      - run: pnpm exec oxlint .
+      - run: pnpm exec eslint .
+      - run: pnpm exec prettier --check src/
+      - run: pnpm exec vitest run --coverage
+      - run: pnpm build
+
+  # Full browser matrix (constitution §15, plan T015): bundled browsers cannot
+  # install on the maintainer's distro, so this matrix only ever runs here.
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm build
+      - run: pnpm exec playwright test --project=${{ matrix.browser }}
