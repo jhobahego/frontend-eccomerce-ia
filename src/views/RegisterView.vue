@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { UserPlus } from 'lucide-vue-next'
 
 import { isApiError } from '../api/errors'
 import { SessionExpiredError } from '../api/client'
 import { useCartStore } from '../stores/cart'
 import { useSessionStore } from '../stores/session'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const session = useSessionStore()
 const cart = useCartStore()
@@ -61,79 +67,97 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <main>
-    <h1>Crear cuenta</h1>
-    <form @submit.prevent="onSubmit" novalidate>
-      <div>
-        <label for="register-email">Correo</label>
-        <input
-          id="register-email"
-          v-model="email"
-          type="email"
-          name="email"
-          autocomplete="email"
-          required
-          :aria-invalid="fieldInvalid('email')"
-          :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
-        />
-      </div>
-      <div>
-        <label for="register-username">Usuario</label>
-        <input
-          id="register-username"
-          v-model="username"
-          type="text"
-          name="username"
-          autocomplete="username"
-          required
-          :aria-invalid="fieldInvalid('username') || fieldInvalid('email')"
-          :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
-        />
-      </div>
-      <div>
-        <label for="register-first-name">Nombre</label>
-        <input
-          id="register-first-name"
-          v-model="firstName"
-          type="text"
-          name="first-name"
-          autocomplete="given-name"
-          required
-          :aria-invalid="fieldInvalid('first_name')"
-          :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
-        />
-      </div>
-      <div>
-        <label for="register-last-name">Apellidos</label>
-        <input
-          id="register-last-name"
-          v-model="lastName"
-          type="text"
-          name="last-name"
-          autocomplete="family-name"
-          required
-          :aria-invalid="fieldInvalid('last_name')"
-          :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
-        />
-      </div>
-      <div>
-        <label for="register-password">Contraseña</label>
-        <input
-          id="register-password"
-          v-model="password"
-          type="password"
-          name="password"
-          autocomplete="new-password"
-          required
-          :aria-invalid="fieldInvalid('password')"
-          :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
-        />
-      </div>
-      <p v-if="errorMessage !== null" id="register-error" role="alert">{{ errorMessage }}</p>
-      <button type="submit" :disabled="loading">
-        {{ loading ? 'Creando…' : 'Crear cuenta' }}
-      </button>
-    </form>
-    <p>¿Ya tienes cuenta? <RouterLink to="/login">Inicia sesión</RouterLink></p>
+  <main class="mx-auto w-full max-w-md space-y-6 py-4">
+    <Card>
+      <CardHeader class="space-y-1">
+        <CardTitle class="text-2xl">Crear cuenta</CardTitle>
+        <CardDescription>Regístrate para comprar y seguir tus pedidos.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form class="grid gap-4" @submit.prevent="onSubmit" novalidate>
+          <div class="grid gap-1.5">
+            <Label for="register-email">Correo</Label>
+            <Input
+              id="register-email"
+              v-model="email"
+              type="email"
+              name="email"
+              autocomplete="email"
+              required
+              :aria-invalid="fieldInvalid('email')"
+              :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
+            />
+          </div>
+          <div class="grid gap-1.5">
+            <Label for="register-username">Usuario</Label>
+            <Input
+              id="register-username"
+              v-model="username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              required
+              :aria-invalid="fieldInvalid('username') || fieldInvalid('email')"
+              :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="grid gap-1.5">
+              <Label for="register-first-name">Nombre</Label>
+              <Input
+                id="register-first-name"
+                v-model="firstName"
+                type="text"
+                name="first-name"
+                autocomplete="given-name"
+                required
+                :aria-invalid="fieldInvalid('first_name')"
+                :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
+              />
+            </div>
+            <div class="grid gap-1.5">
+              <Label for="register-last-name">Apellidos</Label>
+              <Input
+                id="register-last-name"
+                v-model="lastName"
+                type="text"
+                name="last-name"
+                autocomplete="family-name"
+                required
+                :aria-invalid="fieldInvalid('last_name')"
+                :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
+              />
+            </div>
+          </div>
+          <div class="grid gap-1.5">
+            <Label for="register-password">Contraseña</Label>
+            <Input
+              id="register-password"
+              v-model="password"
+              type="password"
+              name="password"
+              autocomplete="new-password"
+              required
+              :aria-invalid="fieldInvalid('password')"
+              :aria-describedby="errorMessage !== null ? 'register-error' : undefined"
+            />
+          </div>
+          <Alert v-if="errorMessage !== null" id="register-error" variant="destructive">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{{ errorMessage }}</AlertDescription>
+          </Alert>
+          <Button type="submit" :disabled="loading" class="w-full">
+            <UserPlus class="size-4" aria-hidden="true" />
+            {{ loading ? 'Creando…' : 'Crear cuenta' }}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+    <p class="text-center text-sm text-muted-foreground">
+      ¿Ya tienes cuenta?
+      <RouterLink to="/login" class="text-primary font-medium hover:underline"
+        >Inicia sesión</RouterLink
+      >
+    </p>
   </main>
 </template>

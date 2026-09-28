@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { RotateCcw, Search, SlidersHorizontal } from 'lucide-vue-next'
 
 import {
   CATALOG_PAGE_SIZE,
@@ -11,6 +12,13 @@ import {
   type ProductSort,
 } from '../api/catalog'
 import ProductCard from '../components/ProductCard.vue'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCatalogStore } from '../stores/catalog'
 
 const catalog = useCatalogStore()
@@ -136,94 +144,190 @@ onMounted(() => {
 </script>
 
 <template>
-  <main>
-    <h1>Catálogo</h1>
-    <form @submit.prevent="applySearch">
-      <div>
-        <label for="catalog-query">Buscar</label>
-        <input id="catalog-query" v-model="query" type="search" name="query" />
-      </div>
-      <div>
-        <label for="catalog-category">Categoría</label>
-        <select id="catalog-category" v-model="categoryId" name="category">
-          <option value="">Todas</option>
-          <option v-for="node in catalog.filterCategories" :key="node.id" :value="String(node.id)">
-            {{ node.name }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label for="catalog-min">Precio mínimo</label>
-        <input
-          id="catalog-min"
-          v-model="minPrice"
-          type="text"
-          name="min"
-          inputmode="decimal"
-          :aria-invalid="priceErrors['min'] !== undefined"
-          :aria-describedby="priceErrors['min'] !== undefined ? 'catalog-min-error' : undefined"
-        />
-        <p v-if="priceErrors['min'] !== undefined" id="catalog-min-error" role="alert">
-          {{ priceErrors['min'] }}
-        </p>
-      </div>
-      <div>
-        <label for="catalog-max">Precio máximo</label>
-        <input
-          id="catalog-max"
-          v-model="maxPrice"
-          type="text"
-          name="max"
-          inputmode="decimal"
-          :aria-invalid="priceErrors['max'] !== undefined"
-          :aria-describedby="priceErrors['max'] !== undefined ? 'catalog-max-error' : undefined"
-        />
-        <p v-if="priceErrors['max'] !== undefined" id="catalog-max-error" role="alert">
-          {{ priceErrors['max'] }}
-        </p>
-      </div>
-      <div>
-        <input id="catalog-featured" v-model="onlyFeatured" type="checkbox" />
-        <label for="catalog-featured">Solo destacados</label>
-      </div>
-      <div>
-        <input id="catalog-stock" v-model="onlyInStock" type="checkbox" />
-        <label for="catalog-stock">Solo disponibles</label>
-      </div>
-      <div>
-        <label for="catalog-sort">Orden</label>
-        <select id="catalog-sort" v-model="sort" name="sort" @change="applySearch">
-          <option value="novelty">Novedad</option>
-          <option value="price-asc">Precio: de menor a mayor</option>
-          <option value="price-desc">Precio: de mayor a menor</option>
-        </select>
-      </div>
-      <button type="submit">Buscar</button>
-      <button v-if="hasActiveFilters()" type="button" @click="clearFilters">Quitar filtros</button>
-    </form>
+  <main class="space-y-6">
+    <div class="space-y-1">
+      <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Catálogo</h1>
+      <p class="text-muted-foreground text-sm">Busca, filtra y ordena el catálogo completo.</p>
+    </div>
 
-    <p v-if="catalog.loading">Cargando…</p>
-    <p v-else-if="catalog.error !== null" role="alert">
-      {{ catalog.error.message }}
-      <button type="button" @click="retry()">Reintentar</button>
-    </p>
-    <template v-else>
-      <p>{{ catalog.page.items.length }} productos</p>
-      <p v-if="catalog.page.items.length === 0">
-        Sin resultados para estos filtros.
-        <button type="button" @click="clearFilters">Ver todo el catálogo</button>
-      </p>
-      <ul v-else>
-        <li v-for="item in catalog.page.items" :key="item.id">
-          <ProductCard :product="item" />
-        </li>
-      </ul>
-      <div>
-        <button type="button" :disabled="catalog.page.skip === 0" @click="previousPage">
-          Anterior
-        </button>
-        <button type="button" :disabled="!catalog.hasMore" @click="nextPage">Siguiente</button>
-      </div>
-    </template>
+    <div class="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <Card class="h-fit lg:sticky lg:top-20">
+        <CardHeader class="pb-3">
+          <CardTitle class="flex items-center gap-2 text-base">
+            <SlidersHorizontal class="size-4" aria-hidden="true" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form class="grid gap-4" @submit.prevent="applySearch">
+            <div class="grid gap-1.5">
+              <Label for="catalog-query">Buscar</Label>
+              <Input
+                id="catalog-query"
+                v-model="query"
+                type="search"
+                name="query"
+                placeholder="Nombre, SKU…"
+              />
+            </div>
+            <div class="grid gap-1.5">
+              <Label for="catalog-category">Categoría</Label>
+              <select
+                id="catalog-category"
+                v-model="categoryId"
+                name="category"
+                class="border-input bg-transparent h-8 w-full rounded-lg border px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">Todas</option>
+                <option
+                  v-for="node in catalog.filterCategories"
+                  :key="node.id"
+                  :value="String(node.id)"
+                >
+                  {{ node.name }}
+                </option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="grid gap-1.5">
+                <Label for="catalog-min">Mínimo</Label>
+                <Input
+                  id="catalog-min"
+                  v-model="minPrice"
+                  type="text"
+                  name="min"
+                  inputmode="decimal"
+                  placeholder="0.00"
+                  :aria-invalid="priceErrors['min'] !== undefined"
+                  :aria-describedby="
+                    priceErrors['min'] !== undefined ? 'catalog-min-error' : undefined
+                  "
+                />
+                <p
+                  v-if="priceErrors['min'] !== undefined"
+                  id="catalog-min-error"
+                  role="alert"
+                  class="text-destructive text-xs"
+                >
+                  {{ priceErrors['min'] }}
+                </p>
+              </div>
+              <div class="grid gap-1.5">
+                <Label for="catalog-max">Máximo</Label>
+                <Input
+                  id="catalog-max"
+                  v-model="maxPrice"
+                  type="text"
+                  name="max"
+                  inputmode="decimal"
+                  placeholder="99.99"
+                  :aria-invalid="priceErrors['max'] !== undefined"
+                  :aria-describedby="
+                    priceErrors['max'] !== undefined ? 'catalog-max-error' : undefined
+                  "
+                />
+                <p
+                  v-if="priceErrors['max'] !== undefined"
+                  id="catalog-max-error"
+                  role="alert"
+                  class="text-destructive text-xs"
+                >
+                  {{ priceErrors['max'] }}
+                </p>
+              </div>
+            </div>
+            <div class="grid gap-2.5">
+              <label for="catalog-featured" class="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox id="catalog-featured" v-model="onlyFeatured" />
+                Solo destacados
+              </label>
+              <label for="catalog-stock" class="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox id="catalog-stock" v-model="onlyInStock" />
+                Solo disponibles
+              </label>
+            </div>
+            <div class="grid gap-1.5">
+              <Label for="catalog-sort">Orden</Label>
+              <select
+                id="catalog-sort"
+                v-model="sort"
+                name="sort"
+                class="border-input bg-transparent h-8 w-full rounded-lg border px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                @change="applySearch"
+              >
+                <option value="novelty">Novedad</option>
+                <option value="price-asc">Precio: de menor a mayor</option>
+                <option value="price-desc">Precio: de mayor a menor</option>
+              </select>
+            </div>
+            <div class="flex gap-2">
+              <Button type="submit" class="flex-1">
+                <Search class="size-4" aria-hidden="true" />
+                Buscar
+              </Button>
+              <Button
+                v-if="hasActiveFilters()"
+                type="button"
+                variant="outline"
+                @click="clearFilters"
+                >Quitar filtros</Button
+              >
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <section aria-label="Resultados" class="space-y-4">
+        <div
+          v-if="catalog.loading"
+          class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          aria-hidden="true"
+        >
+          <Skeleton v-for="n in 6" :key="n" class="h-64 w-full rounded-xl" />
+          <p class="sr-only">Cargando…</p>
+        </div>
+        <Alert v-else-if="catalog.error !== null" variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription class="flex flex-wrap items-center gap-3">
+            {{ catalog.error.message }}
+            <Button type="button" size="sm" variant="outline" @click="retry()">
+              <RotateCcw class="size-4" aria-hidden="true" />
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
+        <template v-else>
+          <p class="text-muted-foreground text-sm">{{ catalog.page.items.length }} productos</p>
+          <Card v-if="catalog.page.items.length === 0">
+            <CardContent class="py-8 text-center text-sm">
+              Sin resultados para estos filtros.
+              <div class="mt-3">
+                <Button type="button" variant="outline" @click="clearFilters"
+                  >Ver todo el catálogo</Button
+                >
+              </div>
+            </CardContent>
+          </Card>
+          <ul v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <li v-for="item in catalog.page.items" :key="item.id" class="h-full">
+              <ProductCard :product="item" />
+            </li>
+          </ul>
+          <div class="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              :disabled="catalog.page.skip === 0"
+              @click="previousPage"
+            >
+              Anterior
+            </Button>
+            <Button type="button" variant="outline" :disabled="!catalog.hasMore" @click="nextPage"
+              >Siguiente</Button
+            >
+          </div>
+        </template>
+      </section>
+    </div>
   </main>
 </template>

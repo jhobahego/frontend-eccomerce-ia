@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { ArrowLeft, RefreshCw } from 'lucide-vue-next'
 
 import { useAdminStore } from '../stores/admin'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const admin = useAdminStore()
 const route = useRoute()
@@ -29,19 +34,48 @@ watch(
 </script>
 
 <template>
-  <main>
-    <p><RouterLink to="/admin/usuarios">Volver a usuarios</RouterLink></p>
-    <p v-if="admin.usersLoading">Cargando…</p>
-    <p v-else-if="admin.error !== null" role="alert">
-      {{ admin.error.message }}
-      <button type="button" @click="load()">Reintentar</button>
+  <main class="mx-auto w-full max-w-2xl space-y-6 px-4 py-6">
+    <p>
+      <RouterLink
+        to="/admin/usuarios"
+        class="text-primary inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+      >
+        <ArrowLeft class="size-4" aria-hidden="true" />
+        Volver a usuarios
+      </RouterLink>
     </p>
-    <template v-else-if="admin.selectedUser !== null">
-      <h1>{{ admin.selectedUser.username }}</h1>
-      <p>{{ admin.selectedUser.email }}</p>
-      <p>{{ admin.selectedUser.first_name }} {{ admin.selectedUser.last_name }}</p>
-      <p>{{ admin.selectedUser.is_superuser ? 'Administración' : 'Cliente' }}</p>
-    </template>
-    <p v-else>Usuario no encontrado.</p>
+    <p v-if="admin.usersLoading" class="text-sm text-muted-foreground">Cargando…</p>
+    <Alert v-else-if="admin.error !== null" variant="destructive">
+      <AlertDescription class="flex flex-wrap items-center gap-3">
+        {{ admin.error.message }}
+        <Button type="button" variant="outline" size="sm" @click="load()">
+          <RefreshCw class="size-4" aria-hidden="true" />
+          Reintentar
+        </Button>
+      </AlertDescription>
+    </Alert>
+    <Card v-else-if="admin.selectedUser !== null">
+      <CardHeader class="space-y-2">
+        <CardTitle>
+          <h1 class="text-2xl font-semibold tracking-tight">
+            {{ admin.selectedUser.username }}
+          </h1>
+        </CardTitle>
+        <div>
+          <Badge variant="secondary">{{
+            admin.selectedUser.is_superuser ? 'Administración' : 'Cliente'
+          }}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent class="space-y-1">
+        <p class="text-sm text-muted-foreground">{{ admin.selectedUser.email }}</p>
+        <p class="text-sm">
+          {{ admin.selectedUser.first_name }} {{ admin.selectedUser.last_name }}
+        </p>
+      </CardContent>
+    </Card>
+    <p v-else class="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+      Usuario no encontrado.
+    </p>
   </main>
 </template>

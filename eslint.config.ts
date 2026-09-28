@@ -32,6 +32,15 @@ export default defineConfigWithVueTs(
     files: ['src/**/__tests__/*'],
   },
 
+  {
+    // Componentes generados por shadcn-vue (CLI oficial): usan nombres
+    // de un solo término (Button, Card, Input...) por convención del registry.
+    files: ['src/components/ui/**/*.{vue,ts}'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
+
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
   skipFormatting,
