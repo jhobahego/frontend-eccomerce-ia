@@ -93,7 +93,7 @@ watch(
             />
             <p
               v-else
-              class="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2 text-sm"
+              class="text-foreground flex h-full w-full flex-col items-center justify-center gap-2 text-sm"
             >
               <ImageOff class="size-8" aria-hidden="true" />
               Sin imagen

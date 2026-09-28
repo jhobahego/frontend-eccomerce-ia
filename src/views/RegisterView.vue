@@ -9,7 +9,7 @@ import { useCartStore } from '../stores/cart'
 import { useSessionStore } from '../stores/session'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
@@ -70,7 +70,9 @@ async function onSubmit(): Promise<void> {
   <main class="mx-auto w-full max-w-md space-y-6 py-4">
     <Card>
       <CardHeader class="space-y-1">
-        <CardTitle class="text-2xl">Crear cuenta</CardTitle>
+        <h1 class="cn-font-heading text-2xl leading-snug font-semibold tracking-tight">
+          Crear cuenta
+        </h1>
         <CardDescription>Regístrate para comprar y seguir tus pedidos.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -9,7 +9,7 @@ import { useOrdersStore } from '../stores/orders'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -115,7 +115,9 @@ watch(
         </Card>
         <Card v-if="orders.tracking !== null">
           <CardHeader class="pb-2">
-            <CardTitle id="tracking-heading" class="text-base">Seguimiento</CardTitle>
+            <h2 id="tracking-heading" class="cn-font-heading text-base leading-snug font-medium">
+              Seguimiento
+            </h2>
           </CardHeader>
           <CardContent>
             <ul class="space-y-1.5 text-sm">

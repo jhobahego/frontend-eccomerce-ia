@@ -108,7 +108,7 @@ onMounted(() => {
         <Alert v-if="isBlocked" variant="destructive">
           <AlertTitle>Sin disponibilidad</AlertTitle>
           <AlertDescription class="space-y-2">
-            <p>Hay artículos sin disponibilidad. Ajusta tu cesta para continuar.</p>
+            <p>Hay artículos sin stock suficiente. Ajusta tu cesta para continuar.</p>
             <ul class="list-disc pl-5">
               <li v-for="issue in cart.validation?.issues ?? []" :key="issue.product_id">
                 {{ lineName(issue.product_id) }}: pides {{ issue.requested }}, hay
