@@ -162,3 +162,13 @@ Append-only ledger. A task recorded `status: complete` is DONE — never re-disp
 - files: e2e/a11y.spec.ts (axe full-rules en 14 rutas: storefront, auth/cuenta, admin), src/__tests__/storefront-views.spec.ts, vitest.config.ts (thresholds), index.html (lang/title), src/components/ProductCard.vue (h2)
 - decision: axe en e2e con todas las reglas incl. color-contrast (el sample jsdom queda como control negativo rápido); vistas al ~48% por diseño (sus flujos los pinea e2e, no unit); presupuestos medidos y registrados, no pineados en repo (se recomprueban antes de ship por constitución §15)
 - blocker: none (nota harness: el runner local a veces no sale tras el resumen con system chrome — los ✓ constan en log; no es código)
+
+## T015 — 2026-09-27
+- status: complete
+- red: `prettier --check src/` rojo en 15 ficheros (deriva preexistente, incl. de esta rama) + `vue-tsc` rojo por un latente de T014 (helper `mountWithShell` con `props` mal tipado — T014 verificó tipos antes de añadirlo)
+- green: `pnpm format` + fix de tipos → prettier limpio, `type-check` limpio, oxlint+eslint cero warnings, `vitest run --coverage` 144/144 con gate lines 80 (80.43%), e2e chromium 39/39 con salida limpia, `pnpm build` verde (JS 162 KB, gzip 53.65 KB), `pnpm audit` sin high/critical
+- triangulation: el a11y-admin rozaba el timeout de 30 s bajo carga paralela (20 s aislado) → spec dividido en 6 tests (7–14 s c/u) con `expect` directo por test para cero warnings de `playwright/expect-expect`; la suite completa se corre con 1 worker local por estabilidad del harness
+- matrix: firefox/webkit imposibles en local (distro fuera de soporte Playwright: `does not support firefox on ubuntu20.04-x64`; misma clase que chromium en T003) → matriz completa CI-owned en ship, como fija el plan
+- files: formato en 15 ficheros (solo estilo), src/__tests__/storefront-views.spec.ts (helpers tipados), e2e/a11y.spec.ts (6 tests granulares sin warnings)
+- decision: T015 como red de cierre funciona — cazó deriva de formato acumulada y un latente de tipos que las tareas no vieron por orden de verificación; el gate que faltaba era `prettier --check` en cada tarea, no solo en verify
+- blocker: none

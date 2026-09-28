@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import type { Component } from 'vue'
 
 import ProductCard from '../components/ProductCard.vue'
 import AdminView from '../views/AdminView.vue'
@@ -70,21 +71,41 @@ function stubFetch(handler: (url: string, init?: RequestInit) => Response): void
   )
 }
 
-function mountWithShell(component: unknown, props?: Record<string, unknown>): ReturnType<typeof mount> {
+function shellGlobals(
+  pinia: ReturnType<typeof createPinia>,
+  router: ReturnType<typeof createRouter>,
+): Record<string, unknown> {
+  return {
+    plugins: [pinia, router],
+    stubs: {
+      RouterLink: { template: '<a><slot /></a>' },
+    },
+  }
+}
+
+function bootShell(): {
+  pinia: ReturnType<typeof createPinia>
+  router: ReturnType<typeof createRouter>
+} {
   const pinia = createPinia()
   setActivePinia(pinia)
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: '/', name: 'home', component: { template: '<div />' } }],
   })
-  return mount(component as never, {
-    props,
-    global: {
-      plugins: [pinia, router],
-      stubs: {
-        RouterLink: { template: '<a><slot /></a>' },
-      },
-    },
+  return { pinia, router }
+}
+
+function mountView(component: Component): ReturnType<typeof mount> {
+  const { pinia, router } = bootShell()
+  return mount(component, { global: shellGlobals(pinia, router) })
+}
+
+function mountCard(product: typeof PRODUCT): ReturnType<typeof mount> {
+  const { pinia, router } = bootShell()
+  return mount(ProductCard, {
+    props: { product },
+    global: shellGlobals(pinia, router),
   })
 }
 
@@ -109,7 +130,7 @@ describe('storefront views coverage (T014)', () => {
       }
       return jsonResponse(CART)
     })
-    const wrapper = mountWithShell(ProductCard, { product: PRODUCT })
+    const wrapper = mountCard(PRODUCT)
     expect(wrapper.text()).toContain('Tetera')
     expect(wrapper.text()).toContain('Disponible')
     expect(wrapper.text()).toContain('Sin imagen')
@@ -119,9 +140,7 @@ describe('storefront views coverage (T014)', () => {
       () => {
         // As a guest the line posts to the session cart, then refetches.
         expect(
-          seen.some(
-            (call) => call.startsWith('POST') && call.includes('/api/v1/cart/session/'),
-          ),
+          seen.some((call) => call.startsWith('POST') && call.includes('/api/v1/cart/session/')),
         ).toBe(true)
       },
       { timeout: 3000 },
@@ -140,7 +159,7 @@ describe('storefront views coverage (T014)', () => {
       }
       return jsonResponse([])
     })
-    const wrapper = mountWithShell(HomeView)
+    const wrapper = mountView(HomeView)
     await vi.waitFor(
       () => {
         expect(wrapper.text()).toContain('Tetera')
@@ -152,11 +171,11 @@ describe('storefront views coverage (T014)', () => {
   })
 
   it('renders the static admin dashboard and not-found views', () => {
-    const admin = mountWithShell(AdminView)
+    const admin = mountView(AdminView)
     expect(admin.text()).toContain('Administración')
     expect(admin.text()).toContain('Pedidos')
 
-    const missing = mountWithShell(NotFoundView)
+    const missing = mountView(NotFoundView)
     expect(missing.text()).toContain('Página no encontrada')
   })
 })

@@ -169,11 +169,7 @@ onMounted(() => {
           <button type="button" @click="startEdit(node.id, node.name)">
             Editar {{ node.name }}
           </button>
-          <button
-            :id="`remove-category-${node.id}`"
-            type="button"
-            @click="askRemove(node.id)"
-          >
+          <button :id="`remove-category-${node.id}`" type="button" @click="askRemove(node.id)">
             Eliminar {{ node.name }}
           </button>
           <div

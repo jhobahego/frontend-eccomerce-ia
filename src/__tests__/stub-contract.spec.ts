@@ -242,32 +242,24 @@ describe('stub transport contract vs snapshot (T004)', () => {
       )
       expect(call('GET', `/api/v1/products/${path}`).status).toBe(404)
     }
-    expect(resolveStubRoute('GET', '/api/v1/orders/all')).not.toBe(
-      'GET /api/v1/orders/{order_id}',
-    )
+    expect(resolveStubRoute('GET', '/api/v1/orders/all')).not.toBe('GET /api/v1/orders/{order_id}')
   })
 })
 
 describe('stub backend decisions (T004 review fold)', () => {
   it('login mints per-role tokens, rejects unknown pairs without enumeration', () => {
-    const customer = call(
-      'POST',
-      '/api/v1/auth/login',
-      { bodyText: new URLSearchParams({ ...STUB_LOGIN }).toString() },
-    )
+    const customer = call('POST', '/api/v1/auth/login', {
+      bodyText: new URLSearchParams({ ...STUB_LOGIN }).toString(),
+    })
     expect(customer).toMatchObject({ status: 200, body: stubToken })
-    const adminLogin = call(
-      'POST',
-      '/api/v1/auth/login',
-      { bodyText: new URLSearchParams({ ...STUB_ADMIN_LOGIN }).toString() },
-    )
+    const adminLogin = call('POST', '/api/v1/auth/login', {
+      bodyText: new URLSearchParams({ ...STUB_ADMIN_LOGIN }).toString(),
+    })
     expect(adminLogin.status).toBe(200)
     expect(adminLogin.body).toMatchObject({ access_token: STUB_ADMIN_ACCESS_TOKEN })
-    const bad = call(
-      'POST',
-      '/api/v1/auth/login',
-      { bodyText: new URLSearchParams({ username: 'ana', password: 'nope' }).toString() },
-    )
+    const bad = call('POST', '/api/v1/auth/login', {
+      bodyText: new URLSearchParams({ username: 'ana', password: 'nope' }).toString(),
+    })
     expect(bad).toEqual({
       status: 401,
       body: { detail: STUB_ERROR_DETAILS.badCredentials },
@@ -288,12 +280,16 @@ describe('stub backend decisions (T004 review fold)', () => {
     expect(created.status).toBe(200)
     expect(created.body).not.toHaveProperty('password')
     expect(created.body).toMatchObject({ email: 'nueva@example.es', is_superuser: false })
-    expect(call('POST', '/api/v1/auth/register', {
-      bodyText: JSON.stringify({ email: stubUser.email, username: 'otra' }),
-    })).toEqual({ status: 400, body: { detail: STUB_ERROR_DETAILS.duplicateEmail } })
-    expect(call('POST', '/api/v1/auth/register', {
-      bodyText: JSON.stringify({ email: 'otra@example.es', username: 'ana' }),
-    })).toEqual({ status: 400, body: { detail: STUB_ERROR_DETAILS.duplicateUsername } })
+    expect(
+      call('POST', '/api/v1/auth/register', {
+        bodyText: JSON.stringify({ email: stubUser.email, username: 'otra' }),
+      }),
+    ).toEqual({ status: 400, body: { detail: STUB_ERROR_DETAILS.duplicateEmail } })
+    expect(
+      call('POST', '/api/v1/auth/register', {
+        bodyText: JSON.stringify({ email: 'otra@example.es', username: 'ana' }),
+      }),
+    ).toEqual({ status: 400, body: { detail: STUB_ERROR_DETAILS.duplicateUsername } })
   })
 
   it('refresh rotates access, rejects unknown tokens verbatim', () => {
@@ -302,9 +298,11 @@ describe('stub backend decisions (T004 review fold)', () => {
     })
     expect(ok.status).toBe(200)
     expect(ok.body).toMatchObject({ access_token: STUB_ROTATED_ACCESS_TOKEN })
-    expect(call('POST', '/api/v1/auth/refresh', {
-      bodyText: JSON.stringify({ refresh_token: 'forged' }),
-    })).toEqual({ status: 401, body: { detail: STUB_ERROR_DETAILS.invalidRefresh } })
+    expect(
+      call('POST', '/api/v1/auth/refresh', {
+        bodyText: JSON.stringify({ refresh_token: 'forged' }),
+      }),
+    ).toEqual({ status: 401, body: { detail: STUB_ERROR_DETAILS.invalidRefresh } })
     const expired = createStubBackend({ auth: 'expired' })
     expect(
       expired.handle({
@@ -367,14 +365,15 @@ describe('stub backend decisions (T004 review fold)', () => {
       status: 403,
       body: { detail: STUB_ERROR_DETAILS.forbidden },
     })
-    expect(
-      call('GET', '/api/v1/users/999', authed(STUB_ADMIN_ACCESS_TOKEN)),
-    ).toEqual({ status: 404, body: { detail: STUB_ERROR_DETAILS.notFound } })
+    expect(call('GET', '/api/v1/users/999', authed(STUB_ADMIN_ACCESS_TOKEN))).toEqual({
+      status: 404,
+      body: { detail: STUB_ERROR_DETAILS.notFound },
+    })
   })
 
   it('category reads serve list/roots/detail/children/with-products honestly', () => {
     const list = call('GET', '/api/v1/categories/')
-    expect((list.body as unknown as unknown[])).toHaveLength(3)
+    expect(list.body as unknown as unknown[]).toHaveLength(3)
     expect(call('GET', '/api/v1/categories/999')).toEqual({
       status: 404,
       body: { detail: STUB_ERROR_DETAILS.notFound },
@@ -393,7 +392,9 @@ describe('stub backend decisions (T004 review fold)', () => {
     const search = call('GET', '/api/v1/products/search?query=tet&is_featured=true&limit=1')
     expect(search.body).toHaveLength(1)
     const sorted = call('GET', '/api/v1/products/?sort_by=price&sort_order=desc')
-    expect((sorted.body as unknown as { id: number }[]).map((product) => product.id)).toEqual([1, 6])
+    expect((sorted.body as unknown as { id: number }[]).map((product) => product.id)).toEqual([
+      1, 6,
+    ])
     expect(call('GET', '/api/v1/products/slug/tetera').status).toBe(200)
     expect(call('GET', '/api/v1/products/sku/NOPE')).toEqual({
       status: 404,
@@ -419,9 +420,9 @@ describe('stub backend decisions (T004 review fold)', () => {
       bodyText: JSON.stringify({ quantity: 3 }),
     })
     expect(updated.body).toMatchObject({ quantity: 3, subtotal: '59.97' })
-    expect(applyProductFilters([...stubProductList], { sort_by: 'price' }).map((p) => p.id)).toEqual([
-      6, 1,
-    ])
+    expect(
+      applyProductFilters([...stubProductList], { sort_by: 'price' }).map((p) => p.id),
+    ).toEqual([6, 1])
   })
 
   it('guest session cart has a seam; validate derives from the served cart', () => {
@@ -481,9 +482,9 @@ describe('stub backend decisions (T004 review fold)', () => {
 
   it('placing an order consumes the cart (T008)', () => {
     const backend = createStubBackend()
-    expect(
-      backend.handle({ method: 'GET', url: '/api/v1/cart/' }).body,
-    ).toMatchObject({ total_items: 2 })
+    expect(backend.handle({ method: 'GET', url: '/api/v1/cart/' }).body).toMatchObject({
+      total_items: 2,
+    })
     const placed = backend.handle({ method: 'POST', url: '/api/v1/orders/' })
     expect(placed.status).toBe(200)
     expect(backend.handle({ method: 'GET', url: '/api/v1/cart/' }).body).toMatchObject({
@@ -525,9 +526,9 @@ describe('stub backend decisions (T004 review fold)', () => {
     expect(
       backend.handle({ method: 'DELETE', url: `/api/v1/categories/${createdId}` }).status,
     ).toBe(200)
-    expect(
-      backend.handle({ method: 'GET', url: `/api/v1/categories/${createdId}` }).status,
-    ).toBe(404)
+    expect(backend.handle({ method: 'GET', url: `/api/v1/categories/${createdId}` }).status).toBe(
+      404,
+    )
   })
 
   it('product writes validate, derive and feed stock alerts (T010)', () => {
@@ -570,12 +571,10 @@ describe('stub backend decisions (T004 review fold)', () => {
       url: '/api/v1/products/low-stock',
       headers: { authorization: `Bearer ${STUB_ADMIN_ACCESS_TOKEN}` },
     })
-    expect(
-      (low.body as { slug: string }[]).map((product) => product.slug),
-    ).toContain('tetera')
-    expect(
-      backend.handle({ method: 'DELETE', url: `/api/v1/products/${createdId}` }).status,
-    ).toBe(200)
+    expect((low.body as { slug: string }[]).map((product) => product.slug)).toContain('tetera')
+    expect(backend.handle({ method: 'DELETE', url: `/api/v1/products/${createdId}` }).status).toBe(
+      200,
+    )
   })
 
   it('track serves a stub-defined timeline; unknown contracts fail loud', () => {

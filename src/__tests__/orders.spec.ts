@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-import {
-  buildOrderCreate,
-  validateShipping,
-  type ShippingForm,
-} from '../api/orders'
+import { buildOrderCreate, validateShipping, type ShippingForm } from '../api/orders'
 import { useCartStore } from '../stores/cart'
 import { useOrdersStore } from '../stores/orders'
 import { useSessionStore } from '../stores/session'
@@ -220,9 +216,7 @@ describe('place order (T008)', () => {
     await loginAsCustomer()
     const seen = cartBackend()
     const orders = useOrdersStore()
-    await expect(
-      orders.placeOrder({ ...FORM, shipping_address: '' }),
-    ).resolves.toBeNull()
+    await expect(orders.placeOrder({ ...FORM, shipping_address: '' })).resolves.toBeNull()
     expect(Object.keys(orders.fieldErrors)).toContain('shipping_address')
     expect(seen.filter((call) => call.includes('/api/v1/orders/'))).toEqual([])
 

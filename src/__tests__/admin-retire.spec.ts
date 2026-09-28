@@ -146,9 +146,7 @@ function stubAdminReads(seen: string[]): void {
 }
 
 function findButton(wrapper: ReturnType<typeof mount>, name: string) {
-  const found = wrapper
-    .findAll('button')
-    .find((button) => button.text().trim() === name)
+  const found = wrapper.findAll('button').find((button) => button.text().trim() === name)
   expect(found?.exists() ?? false, `button "${name}" missing`).toBe(true)
   return found
 }

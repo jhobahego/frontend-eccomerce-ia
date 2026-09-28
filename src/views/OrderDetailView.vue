@@ -3,11 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 
 import { formatAmount } from '../api/money'
-import {
-  isCancellableStatus,
-  orderStatusLabel,
-  paymentStatusLabel,
-} from '../api/orders'
+import { isCancellableStatus, orderStatusLabel, paymentStatusLabel } from '../api/orders'
 import { useOrdersStore } from '../stores/orders'
 
 const orders = useOrdersStore()
@@ -51,9 +47,7 @@ watch(
 
 <template>
   <main>
-    <p v-if="invalidId">
-      Pedido no válido. <RouterLink to="/pedidos">Ver mis pedidos</RouterLink>
-    </p>
+    <p v-if="invalidId">Pedido no válido. <RouterLink to="/pedidos">Ver mis pedidos</RouterLink></p>
     <template v-else>
       <p v-if="orders.detailLoading">Cargando…</p>
       <p v-else-if="orders.error !== null" role="alert">
@@ -66,8 +60,9 @@ watch(
         <p>Pago: {{ paymentStatusLabel(orders.detail.payment_status) }}</p>
         <p>Total: {{ formatAmount(orders.detail.total_amount) }}</p>
         <p>
-          Envío: {{ orders.detail.shipping_address }}, {{ orders.detail.shipping_city }}
-          ({{ orders.detail.shipping_postal_code }}, {{ orders.detail.shipping_country }})
+          Envío: {{ orders.detail.shipping_address }}, {{ orders.detail.shipping_city }} ({{
+            orders.detail.shipping_postal_code
+          }}, {{ orders.detail.shipping_country }})
         </p>
         <section aria-label="Artículos">
           <ul>

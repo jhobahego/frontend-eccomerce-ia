@@ -59,9 +59,7 @@ afterEach(() => {
 
 describe('route guards (T005)', () => {
   it('lets anonymous visitors through public routes', () => {
-    expect(decideAccess({ isAuthenticated: false, isAdmin: false }, { public: true })).toBe(
-      'allow',
-    )
+    expect(decideAccess({ isAuthenticated: false, isAdmin: false }, { public: true })).toBe('allow')
   })
 
   it('lets anonymous visitors through routes without requirements (storefront default)', () => {

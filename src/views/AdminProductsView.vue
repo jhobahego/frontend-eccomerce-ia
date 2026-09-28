@@ -225,11 +225,7 @@ onMounted(() => {
             <label for="admin-product-category">Categoría</label>
             <select id="admin-product-category" v-model="categoryId" required>
               <option value="">Elige</option>
-              <option
-                v-for="node in admin.categories"
-                :key="node.id"
-                :value="String(node.id)"
-              >
+              <option v-for="node in admin.categories" :key="node.id" :value="String(node.id)">
                 {{ node.name }}
               </option>
             </select>
@@ -266,11 +262,7 @@ onMounted(() => {
           <button type="button" @click="startStock(item.id, item.stock_quantity)">
             Ajustar stock de {{ item.name }}
           </button>
-          <button
-            :id="`remove-product-${item.id}`"
-            type="button"
-            @click="askRemove(item.id)"
-          >
+          <button :id="`remove-product-${item.id}`" type="button" @click="askRemove(item.id)">
             Eliminar {{ item.name }}
           </button>
           <div

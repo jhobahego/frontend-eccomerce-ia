@@ -70,7 +70,9 @@ onMounted(() => {
           <button type="button" @click="remove(line.id)">Quitar</button>
         </li>
       </ul>
-      <p>{{ cart.cart.total_items }} artículos — Total: {{ formatAmount(cart.cart.total_amount) }}</p>
+      <p>
+        {{ cart.cart.total_items }} artículos — Total: {{ formatAmount(cart.cart.total_amount) }}
+      </p>
       <button type="button" @click="clear()">Vaciar cesta</button>
       <p><RouterLink to="/catalogo">Seguir comprando</RouterLink></p>
     </template>

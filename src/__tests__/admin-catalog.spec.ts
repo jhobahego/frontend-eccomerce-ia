@@ -158,9 +158,9 @@ describe('admin catalog contracts (T010)', () => {
     await updateProduct(1, { name: 'Tetera grande' })
     await toggleProductFeatured(1, false)
     await setProductStock(1, 25)
-    expect(seen.some((call) => call.startsWith('PUT') && call.includes('/api/v1/products/1 '))).toBe(
-      true,
-    )
+    expect(
+      seen.some((call) => call.startsWith('PUT') && call.includes('/api/v1/products/1 ')),
+    ).toBe(true)
     expect(seen.some((call) => call.includes('"is_featured":false'))).toBe(true)
     expect(
       seen.some(

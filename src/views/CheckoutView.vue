@@ -21,9 +21,7 @@ const billingPostalCode = ref('')
 const notes = ref('')
 const paymentMethod = ref('tarjeta')
 
-const isBlocked = computed(
-  () => cart.validation !== null && !cart.validation.valid,
-)
+const isBlocked = computed(() => cart.validation !== null && !cart.validation.valid)
 
 function lineName(productId: number): string {
   const line = cart.cart?.items.find((entry) => entry.product_id === productId)
@@ -192,9 +190,7 @@ onMounted(() => {
             {{ orders.error.message }}
             <button type="button" @click="retry()">Reintentar</button>
           </p>
-          <button type="submit" :disabled="orders.placing || isBlocked">
-            Confirmar pedido
-          </button>
+          <button type="submit" :disabled="orders.placing || isBlocked">Confirmar pedido</button>
         </form>
       </template>
     </template>

@@ -1,11 +1,4 @@
-import type {
-  Category,
-  Order,
-  OrderStatus,
-  PaymentStatus,
-  Product,
-  User,
-} from '../api/types'
+import type { Category, Order, OrderStatus, PaymentStatus, Product, User } from '../api/types'
 import { ORDER_STATUSES, PAYMENT_STATUSES } from '../api/types'
 
 import {
@@ -159,8 +152,7 @@ export function applyProductFilters(products: Product[], query: ProductQuery): P
   if (query.sort_by === 'price') {
     const direction = query.sort_order === 'desc' ? -1 : 1
     result.sort(
-      (left, right) =>
-        direction * (centsOf(left.current_price) - centsOf(right.current_price)),
+      (left, right) => direction * (centsOf(left.current_price) - centsOf(right.current_price)),
     )
   }
   const skip = query.skip ?? 0
@@ -338,10 +330,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
     switch (key) {
       case 'POST /api/v1/auth/login': {
         const form = parseForm(request.bodyText)
-        if (
-          form['username'] === STUB_LOGIN.username &&
-          form['password'] === STUB_LOGIN.password
-        ) {
+        if (form['username'] === STUB_LOGIN.username && form['password'] === STUB_LOGIN.password) {
           return { status: 200, body: stubToken }
         }
         if (
@@ -372,8 +361,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
             ...stubUser,
             ...pickProfile(body),
             email: typeof body['email'] === 'string' ? body['email'] : stubUser.email,
-            username:
-              typeof body['username'] === 'string' ? body['username'] : 'newuser',
+            username: typeof body['username'] === 'string' ? body['username'] : 'newuser',
             id: 6,
           },
         }
@@ -728,7 +716,12 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         if (orderPlaced || fullCart === null) {
           return {
             status: 200,
-            body: { ...stubBackendCartSummary, total_items: 0, total_amount: '0.00', items_count: 0 },
+            body: {
+              ...stubBackendCartSummary,
+              total_items: 0,
+              total_amount: '0.00',
+              items_count: 0,
+            },
           }
         }
         return { status: 200, body: stubBackendCartSummary }
@@ -845,8 +838,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         const summaries = [orderSummaryOf(currentOrder)]
         return {
           status: 200,
-          body:
-            wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
+          body: wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
         }
       }
 
@@ -859,8 +851,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         const summaries = [orderSummaryOf(currentOrder)]
         return {
           status: 200,
-          body:
-            wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
+          body: wanted === null ? summaries : summaries.filter((order) => order.status === wanted),
         }
       }
 
@@ -907,10 +898,7 @@ export function createStubBackend(options: StubBackendOptions = {}): {
         }
         if (key === 'PUT /api/v1/orders/{order_id}/status') {
           const next = url.searchParams.get('new_status')
-          if (
-            next === null ||
-            !(ORDER_STATUSES as readonly string[]).includes(next)
-          ) {
+          if (next === null || !(ORDER_STATUSES as readonly string[]).includes(next)) {
             return {
               status: 422,
               body: {

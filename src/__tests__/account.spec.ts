@@ -1,11 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
-import {
-  isCancellableStatus,
-  orderStatusLabel,
-  paymentStatusLabel,
-} from '../api/orders'
+import { isCancellableStatus, orderStatusLabel, paymentStatusLabel } from '../api/orders'
 import { updateMyProfile } from '../api/users'
 import { useOrdersStore } from '../stores/orders'
 import { useSessionStore } from '../stores/session'

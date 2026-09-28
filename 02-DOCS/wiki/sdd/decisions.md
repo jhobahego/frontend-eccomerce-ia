@@ -97,6 +97,12 @@
 - Perf medido, no pineado: JS inicial 53.65 KB gzip (chunk único, margen 5x); LCP 272–392 ms en preview (margen 6x). Se recomprueba antes de ship (§15).
 - Defectos reales cazados por axe: `heading-order` en ProductCard y `lang` vacío en index.html.
 
+## 2026-09-27 — T015 verify completo del build (complete)
+
+- Puertas verdes: prettier, tipos, oxlint+eslint sin warnings, 144 unit con cobertura 80.43% (gate pineado), 39 e2e chromium, build 53.65 KB gzip, audit limpio.
+- T015 cazó lo que las tareas no vieron: deriva de formato en 15 ficheros y un error de tipos latente de T014. Lección: `prettier --check` debe correr por tarea, no solo en verify.
+- Matriz firefox/webkit imposible en esta distro (bundles sin soporte) → CI-owned en ship; a11y dividido en tests pequeños para no rozar timeouts bajo carga.
+
 ## 2026-09-26 — constitution v1.0.0 (draft, pendiente de ratificar) + `config.yaml`
 
 - Entrevista L2: TDD rojo→verde→refactor + cobertura ≥ 80 % en cambiado · rama+PR siempre (nada directo a `main`) · WCAG 2.2 AA con axe en e2e · Conventional Commits. Las 4 recomendaciones se aceptaron.

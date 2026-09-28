@@ -109,10 +109,7 @@ export const useOrdersStore = defineStore('orders', () => {
     detail.value = null
     tracking.value = null
     try {
-      const [served, servedTracking] = await Promise.all([
-        fetchOrder(id),
-        fetchOrderTracking(id),
-      ])
+      const [served, servedTracking] = await Promise.all([fetchOrder(id), fetchOrderTracking(id)])
       detail.value = served
       tracking.value = servedTracking
     } catch (unknown) {

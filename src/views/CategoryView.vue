@@ -35,7 +35,9 @@ watch(
 
 <template>
   <main>
-    <p v-if="invalidId">Categoría no válida. <RouterLink to="/catalogo">Ver catálogo</RouterLink></p>
+    <p v-if="invalidId">
+      Categoría no válida. <RouterLink to="/catalogo">Ver catálogo</RouterLink>
+    </p>
     <template v-else>
       <p v-if="catalog.loading">Cargando…</p>
       <p v-else-if="catalog.error !== null" role="alert">
